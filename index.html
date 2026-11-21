@@ -735,14 +735,14 @@
 
   <script>
     const firebaseConfig = {
-      apiKey: "AIzaSyA1mwsZuqX1fRDixcvL7cY_Gb6qzgH-HlA",
-      authDomain: "homework-90c63.firebaseapp.com",
-      databaseURL: "https://homework-90c63-default-rtdb.firebaseio.com",
-      projectId: "homework-90c63",
-      storageBucket: "homework-90c63.firebasestorage.app",
-      messagingSenderId: "202141135536",
-      appId: "1:202141135536:web:942890b3b19999d591c175",
-      measurementId: "G-55ED4KKV3R"
+      apiKey: "AIzaSyDdlqepl8-x2XLWEdI7viCRuNSsafZYnPI",
+      authDomain: "dsmkfsaf.firebaseapp.com",
+      databaseURL: "https://dsmkfsaf-default-rtdb.firebaseio.com",
+      projectId: "dsmkfsaf",
+      storageBucket: "dsmkfsaf.firebasestorage.app",
+      messagingSenderId: "916158344887",
+      appId: "1:916158344887:web:86777f199ccf281407e732",
+      measurementId: "G-6T9K252VQX"
     };
 
     firebase.initializeApp(firebaseConfig);
@@ -774,6 +774,7 @@
     let currentLeaveType = 'Leave';
     let html5QrScannerInstance = null;
     let currentScanPurpose = 'attendance';
+    let isInitialEmployeesSeeded = false;
 
     function getData(key, def) {
       const val = localStorage.getItem(key);
@@ -788,14 +789,17 @@
     }
 
     function startRealtimeSync() {
+      if (typeof db === 'undefined') return;
       syncedKeys.forEach((key) => {
         db.ref('portal/' + key).on('value', (snapshot) => {
           const data = snapshot.val();
           if (data !== null) {
-            localStorage.setItem(key, JSON.stringify(data));
+            const normalized = Array.isArray(data) ? data.filter(Boolean) : data;
+            localStorage.setItem(key, JSON.stringify(normalized));
             if (key === 'hw_announcement') renderAnnouncement();
-            if (currentUser && currentUser.role === 'admin') renderAdminDashboard();
-            if (currentUser && currentUser.role === 'staff') {
+            if (currentUser && currentUser.role === 'admin') {
+              renderAdminDashboard();
+            } else if (currentUser && currentUser.role === 'staff') {
               const freshEmps = getData('hw_employees', defaultEmployees);
               const me = freshEmps.find(e => e.id === currentUser.id);
               if (me && isUserBanned(me)) {
@@ -804,8 +808,9 @@
               }
               renderStaffDashboard();
             }
-          } else if (key === 'hw_employees') {
-            saveData('hw_employees', defaultEmployees);
+          } else if (key === 'hw_employees' && !isInitialEmployeesSeeded) {
+            isInitialEmployeesSeeded = true;
+            saveData('hw_employees', getData('hw_employees', defaultEmployees));
           }
         });
       });
