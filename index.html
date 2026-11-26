@@ -58,7 +58,42 @@
 </head>
 <body class="min-h-screen text-slate-100 selection:bg-indigo-500 selection:text-white">
 
-  <!-- LOGIN SECTION -->
+  <!-- APP LOCK / SHUTDOWN SCREEN -->
+  <div id="appLockOverlay" class="hidden fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-xl flex items-center justify-center p-4 overflow-y-auto">
+    <div class="glass-panel border-rose-500/40 max-w-md w-full p-8 rounded-[2.5rem] text-center space-y-4 glow-rose my-auto">
+      <div class="w-16 h-16 rounded-2xl bg-rose-500/20 text-rose-400 flex items-center justify-center mx-auto text-3xl">
+        <i class="fa-solid fa-lock"></i>
+      </div>
+      <h2 class="text-xl font-black text-white">App Locked by AI / Admin</h2>
+      <p id="lockByDisplay" class="text-[11px] font-mono uppercase text-rose-400 font-bold">Authority: AI ADMIN</p>
+      <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 text-left space-y-1">
+        <p class="text-[10px] font-black uppercase text-slate-400">Reason</p>
+        <p id="lockReasonDisplay" class="text-xs font-bold text-slate-200">-</p>
+      </div>
+
+      <!-- URGENT UNLOCK BY ADMIN ID (ANY TIME) -->
+      <div class="bg-slate-950 border border-cyan-500/30 rounded-2xl p-4 text-left space-y-2">
+        <p class="text-[10px] font-black uppercase text-cyan-400"><i class="fa-solid fa-bolt mr-1"></i>Urgent Unlock (Admin ID)</p>
+        <input type="text" id="urgentUnlockAdminIdInput" placeholder="Enter your Admin ID..."
+          onkeydown="if(event.key==='Enter') urgentUnlockWithAdminId()"
+          class="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-mono font-bold text-white uppercase">
+        <button type="button" onclick="urgentUnlockWithAdminId()" class="liquid-btn glow-cyan w-full py-2.5 rounded-xl text-xs font-black text-cyan-300">Urgent Unlock with Admin ID</button>
+      </div>
+
+      <!-- 1 AM UNLOCK CODE -->
+      <div class="bg-slate-950 border border-amber-500/30 rounded-2xl p-4 text-left space-y-2">
+        <p class="text-[10px] font-black uppercase text-amber-400">1 AM Unlock Code (01:00 - 01:59 AM)</p>
+        <input type="text" id="unlockCodeInput" placeholder="Enter 1 AM Unlock Code..."
+          onkeydown="if(event.key==='Enter') unlockAppWith1AmCode()"
+          class="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-mono font-bold text-white uppercase">
+        <button type="button" onclick="unlockAppWith1AmCode()" class="liquid-btn glow-amber w-full py-2.5 rounded-xl text-xs font-black text-amber-300">Unlock with 1 AM Code</button>
+      </div>
+
+      <p id="unlockErrorMsg" class="text-[11px] text-rose-400 font-bold hidden"></p>
+    </div>
+  </div>
+
+  <!-- LOGIN SECTION (EMPLOYEE ID ONLY + QR + REQUESTS + 1 AM AI ADMIN) -->
   <div id="loginSection" class="min-h-screen flex items-center justify-center p-4 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-950 via-[#080810] to-purple-950">
     <div class="glass-panel w-full max-w-md p-8 rounded-[2.5rem] shadow-2xl border border-indigo-500/20">
       <div class="text-center mb-8">
@@ -67,12 +102,13 @@
         </div>
         <h1 class="text-2xl font-black text-white">Work Management</h1>
         <p class="text-slate-400 text-xs mt-1 font-semibold">Enter Employee ID or Scan ID Card QR</p>
+        <p id="dbSyncStatus" class="text-[10px] font-mono text-slate-400 mt-1">Connecting to Firebase...</p>
       </div>
 
       <div class="space-y-4">
         <div>
           <label class="block text-[11px] font-black uppercase tracking-wider text-indigo-400 mb-1.5">Employee ID</label>
-          <input type="text" id="empIdInput" placeholder="e.g. ADMIN20260306 or 20260301" 
+          <input type="text" id="empIdInput" placeholder="Enter your Employee ID..."
             onkeydown="if(event.key==='Enter') handleLogin()"
             class="w-full px-4 py-3.5 rounded-2xl bg-slate-950 border border-slate-800 focus:outline-none focus:border-indigo-500 font-mono font-bold text-slate-100 text-sm uppercase">
         </div>
@@ -91,12 +127,18 @@
         <p id="loginError" class="text-rose-400 text-xs text-center hidden font-bold bg-rose-950/40 p-2.5 rounded-xl border border-rose-500/30"></p>
       </div>
 
-      <div class="mt-8 border-t border-slate-800/80 pt-6 text-center">
-        <p class="text-xs text-slate-400 font-medium mb-3">Need a new account or profile update?</p>
-        <button type="button" onclick="openUserRequestModal()" class="liquid-btn glow-cyan px-5 py-3 rounded-2xl text-cyan-400 text-xs font-black inline-flex items-center space-x-2">
-          <i class="fa-solid fa-user-plus mr-1"></i>
-          <span>Request Account / Update</span>
-        </button>
+      <div class="mt-8 border-t border-slate-800/80 pt-6 text-center space-y-3">
+        <p class="text-xs text-slate-400 font-medium">Need a new account or profile update?</p>
+        <div class="flex flex-col sm:flex-row gap-2 justify-center">
+          <button type="button" onclick="openUserRequestModal()" class="liquid-btn glow-cyan px-4 py-3 rounded-2xl text-cyan-400 text-xs font-black inline-flex items-center justify-center space-x-2">
+            <i class="fa-solid fa-user-plus mr-1"></i>
+            <span>Request Account / Update</span>
+          </button>
+          <button type="button" onclick="openModal('createAdminModal')" class="liquid-btn glow-amber px-4 py-3 rounded-2xl text-amber-400 text-xs font-black inline-flex items-center justify-center space-x-2">
+            <i class="fa-solid fa-robot mr-1"></i>
+            <span>1 AM AI Admin</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -124,11 +166,10 @@
 
   <!-- DASHBOARD CONTAINER WITH VERTICAL SIDEBAR & VERTICAL CONTENT -->
   <div id="dashboardSection" class="hidden min-h-screen flex flex-col md:flex-row bg-[#080810] text-slate-100">
-    
+
     <!-- VERTICAL SIDEBAR NAVIGATION -->
     <aside class="w-full md:w-64 glass-panel border-b md:border-b-0 md:border-r border-slate-800 shrink-0 flex flex-col justify-between p-4 md:sticky md:top-0 md:h-screen z-30 overflow-y-auto">
       <div class="space-y-5">
-        <!-- USER PROFILE HEADER -->
         <div class="flex items-center space-x-3 p-2 border-b border-slate-800/80 pb-4">
           <div id="userHeaderAvatar" class="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center font-black text-white text-lg glow-purple shrink-0 overflow-hidden">A</div>
           <div class="truncate">
@@ -137,7 +178,6 @@
           </div>
         </div>
 
-        <!-- VERTICAL NAVIGATION BUTTONS -->
         <div id="verticalNavGroup" class="space-y-2">
           <!-- ADMIN VERTICAL BUTTONS -->
           <div id="adminNavButtons" class="space-y-2 hidden">
@@ -201,7 +241,7 @@
 
     <!-- MAIN DYNAMIC CONTENT AREA (VERTICAL STACK) -->
     <main class="flex-1 p-5 md:p-6 space-y-6">
-      
+
       <!-- ANNOUNCEMENTS BANNER -->
       <div id="announcementBanner" class="hidden">
         <div class="glass-panel border-amber-500/30 p-4 rounded-3xl flex items-start space-x-4 glow-amber">
@@ -217,8 +257,8 @@
 
       <!-- ================= ADMIN PANELS ================= -->
       <div id="adminPanel" class="space-y-6 hidden">
-        
-        <!-- SECTION 0: OVERVIEW (VERTICAL CARDS) -->
+
+        <!-- SECTION 0: OVERVIEW -->
         <div id="section-overview" class="tab-panel space-y-6">
           <div class="flex flex-col gap-4">
             <div class="glass-panel p-5 rounded-3xl glow-purple flex justify-between items-center">
@@ -251,6 +291,70 @@
             </div>
           </div>
 
+          <!-- AUTONOMOUS AI ADMIN CONTROLLER, APP LOCK & GEOFENCE -->
+          <div class="glass-panel rounded-3xl p-6 space-y-5 glow-purple border border-indigo-500/30">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+              <div>
+                <h3 class="text-xs font-black text-indigo-300 uppercase tracking-widest">
+                  <i class="fa-solid fa-robot mr-2 text-cyan-400"></i>Autonomous AI Admin Controller
+                </h3>
+                <p class="text-[11px] text-slate-400 mt-0.5">AI handles leaves, duties, notices, transfers & app lock autonomously.</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <span id="aiModeBadge" class="px-3 py-1 rounded-full text-[10px] font-black uppercase bg-emerald-500/20 text-emerald-400">AI Auto: ON</span>
+                <button type="button" onclick="toggleAiAutonomous()" class="liquid-btn glow-cyan px-3 py-1.5 rounded-xl text-[11px] font-black text-cyan-300">Toggle AI</button>
+                <button type="button" onclick="runAiAutonomousEngine(true)" class="liquid-btn glow-purple px-3 py-1.5 rounded-xl text-[11px] font-black text-white">Run AI Cycle</button>
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <label class="block text-[10px] font-black uppercase text-slate-400">Gemini API Key</label>
+              <div class="flex flex-col sm:flex-row gap-2">
+                <input type="password" id="geminiApiKeyInput" placeholder="Gemini API Key..." class="flex-1 px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs font-mono text-white">
+                <button type="button" onclick="saveGeminiKey()" class="liquid-btn glow-blue px-4 py-2.5 rounded-xl text-xs font-black text-blue-300">Save Key</button>
+              </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-2">
+              <input type="text" id="aiPromptInput" placeholder="Give AI an admin directive (leaves, tasks, notice, transfer, lock app)..."
+                onkeydown="if(event.key==='Enter') runAiDirective()"
+                class="flex-1 px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs font-semibold text-white">
+              <button type="button" onclick="runAiDirective()" class="liquid-btn glow-purple px-5 py-3 rounded-2xl text-xs font-black text-white">Ask AI Admin</button>
+            </div>
+
+            <!-- APP LOCK / SHUTDOWN CONTROLS -->
+            <div class="bg-slate-950/90 border border-slate-800 rounded-2xl p-4 space-y-3">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <span class="text-[11px] font-black uppercase text-rose-400"><i class="fa-solid fa-lock mr-1.5"></i>App Shutdown / Lock Switch</span>
+                <span id="adminAppLockBadge" class="text-[11px] font-mono font-bold text-emerald-400">UNLOCKED</span>
+              </div>
+              <div class="flex flex-col sm:flex-row gap-2">
+                <input type="text" id="lockReasonInput" placeholder="Reason to lock app..." class="flex-1 px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs font-semibold text-white">
+                <button type="button" onclick="lockAppNow('AI ADMIN')" class="liquid-btn glow-rose px-4 py-2 rounded-xl text-xs font-black text-rose-400">Lock App</button>
+                <button type="button" onclick="promptUnlockWith1Am()" class="liquid-btn glow-emerald px-4 py-2 rounded-xl text-xs font-black text-emerald-400">Unlock (1 AM Code)</button>
+              </div>
+            </div>
+
+            <!-- GEOFENCE ZONE (10m ATTENDANCE / 5m DUTY SUBMIT) -->
+            <div class="bg-slate-950/90 border border-slate-800 rounded-2xl p-4 space-y-3">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <span class="text-[11px] font-black uppercase text-cyan-400"><i class="fa-solid fa-location-dot mr-1.5"></i>Geofence Zone (10m Attendance / 5m Duty Submit)</span>
+                <button type="button" onclick="captureCurrentZoneGps()" class="liquid-btn glow-cyan px-3 py-1.5 rounded-xl text-[11px] font-black text-cyan-300">Use Current GPS</button>
+              </div>
+              <div class="flex flex-col sm:flex-row gap-2">
+                <input type="number" step="any" id="zoneLatInput" placeholder="Latitude" class="flex-1 px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs font-mono text-white">
+                <input type="number" step="any" id="zoneLngInput" placeholder="Longitude" class="flex-1 px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs font-mono text-white">
+                <button type="button" onclick="saveZoneGps()" class="liquid-btn glow-blue px-4 py-2 rounded-xl text-xs font-black text-white">Save GPS</button>
+              </div>
+              <p id="zoneGpsStatus" class="text-[11px] font-mono text-slate-400"></p>
+            </div>
+
+            <div class="bg-slate-950 border border-slate-800 rounded-2xl p-3.5 space-y-1.5">
+              <p class="text-[10px] font-black uppercase text-indigo-400">AI Admin Activity Log</p>
+              <div id="aiActivityLog" class="space-y-1 text-xs font-mono text-slate-300 max-h-36 overflow-y-auto"></div>
+            </div>
+          </div>
+
           <!-- STAFF SOS / URGENT HELP ALERTS -->
           <div id="adminSosContainer" class="hidden glass-panel border-rose-500/40 rounded-3xl p-5 space-y-3 glow-rose">
             <div class="flex justify-between items-center">
@@ -273,7 +377,7 @@
           </div>
         </div>
 
-        <!-- SECTION QR HUB: ADMIN QR GENERATOR & SCANNER (VERTICAL STACK) -->
+        <!-- SECTION QR HUB -->
         <div id="section-qrHub" class="tab-panel glass-panel rounded-3xl p-6 space-y-6 hidden glow-cyan">
           <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 border-b border-slate-800 pb-4">
             <div>
@@ -288,7 +392,7 @@
           <div class="flex flex-col gap-6">
             <div class="bg-slate-950 p-5 rounded-3xl border border-emerald-500/30 text-center space-y-3">
               <span class="px-3 py-1 rounded-full text-[10px] font-black bg-emerald-500/20 text-emerald-400 uppercase">1. Daily Attendance QR</span>
-              <p class="text-[11px] text-slate-400">Staff scans this QR to mark today's Present</p>
+              <p class="text-[11px] text-slate-400">Staff scans this QR (within 10m) to mark today's Present</p>
               <div class="flex justify-center py-2">
                 <div id="adminDailyAttQr" class="qr-box"></div>
               </div>
@@ -354,7 +458,7 @@
           </div>
         </div>
 
-        <!-- SECTION 2: TASKS & NOTICES (VERTICAL STACK) -->
+        <!-- SECTION 2: TASKS & NOTICES -->
         <div id="section-tasks" class="tab-panel glass-panel rounded-3xl p-6 space-y-6 hidden glow-purple">
           <div class="flex flex-col gap-6">
             <div class="space-y-4">
@@ -419,13 +523,14 @@
           </div>
         </div>
 
-        <!-- SECTION 4: TEAM DIRECTORY, MANUAL ATTENDANCE & BANS -->
+        <!-- SECTION 4: TEAM DIRECTORY, MANUAL ATTENDANCE, POINTS & ACCOUNT CONTROL -->
         <div id="section-directory" class="tab-panel glass-panel rounded-3xl p-6 space-y-4 hidden glow-emerald">
           <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-            <h3 class="text-xs font-black text-emerald-400 uppercase tracking-widest"><i class="fa-solid fa-users mr-2"></i>Team Directory, Manual P/A/L & Bans</h3>
-            <div class="flex items-center gap-2">
+            <h3 class="text-xs font-black text-emerald-400 uppercase tracking-widest"><i class="fa-solid fa-users mr-2"></i>Team Directory, Points, Ban & Delete</h3>
+            <div class="flex flex-wrap items-center gap-2">
               <input type="date" id="adminAttDateInput" onchange="renderAdminDashboard()" class="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-xs font-bold text-white">
               <button type="button" onclick="openModal('addEmpModal')" class="liquid-btn glow-emerald px-4 py-2 rounded-xl text-xs font-black text-emerald-400">+ Add Employee</button>
+              <button type="button" onclick="openModal('createAdminModal')" class="liquid-btn glow-amber px-4 py-2 rounded-xl text-xs font-black text-amber-400">+ 1 AM AI Admin</button>
             </div>
           </div>
           <div class="overflow-x-auto">
@@ -434,6 +539,7 @@
                 <tr>
                   <th class="p-3">ID</th>
                   <th class="p-3">Name</th>
+                  <th class="p-3">Points</th>
                   <th class="p-3">Date Status</th>
                   <th class="p-3">Mark P / A / L</th>
                   <th class="p-3 text-right">Account Control</th>
@@ -449,29 +555,32 @@
           <h3 class="text-xs font-black text-amber-400 uppercase tracking-widest flex items-center space-x-2">
             <i class="fa-solid fa-right-left"></i> <span>Duty Exchange & Transfer Control</span>
           </h3>
-          <p class="text-xs text-slate-400">Agar koi employee kaam nahi kar sakta, toh Admin uski duty kisi dusre staff ko transfer kar sakta hai.</p>
+          <p class="text-xs text-slate-400">Agar koi employee kaam nahi kar sakta, toh AI Admin uski duty kisi dusre staff ko transfer kar sakta hai.</p>
           <div id="dutyTransferList" class="space-y-3"></div>
         </div>
       </div>
 
       <!-- ================= STAFF PANELS ================= -->
       <div id="staffPanel" class="space-y-6 hidden">
-        
-        <!-- STAFF ATTENDANCE TAB -->
+
+        <!-- STAFF ATTENDANCE TAB (10m RANGE) -->
         <div id="section-attendance" class="tab-panel glass-panel rounded-3xl p-6 space-y-5 glow-emerald">
           <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-            <h3 class="text-xs font-black text-emerald-400 uppercase tracking-widest"><i class="fa-solid fa-user-check mr-2"></i>QR & Daily Attendance</h3>
+            <div>
+              <h3 class="text-xs font-black text-emerald-400 uppercase tracking-widest"><i class="fa-solid fa-user-check mr-2"></i>QR & Daily Attendance (10m Radius)</h3>
+              <p id="staffZoneNote" class="text-[11px] font-mono text-slate-400 mt-0.5">Attendance requires being within 10m of work zone.</p>
+            </div>
             <button type="button" onclick="sendUrgentSosAlert()" class="liquid-btn glow-rose px-4 py-2 rounded-xl text-xs font-black text-rose-400">
               <i class="fa-solid fa-bell mr-1"></i> Urgent Help / SOS
             </button>
           </div>
-          
+
           <div id="attendanceActionButtons" class="flex flex-col sm:flex-row flex-wrap gap-3">
             <button type="button" onclick="openQrScanner('attendance')" class="liquid-btn glow-cyan px-6 py-3.5 rounded-2xl text-xs font-black text-cyan-400">
-              <i class="fa-solid fa-qrcode mr-1.5"></i> Scan Attendance QR
+              <i class="fa-solid fa-qrcode mr-1.5"></i> Scan Attendance QR (10m)
             </button>
             <button type="button" onclick="markStaffAttendance('Present')" class="liquid-btn glow-emerald px-6 py-3.5 rounded-2xl text-xs font-black text-emerald-400">
-              <i class="fa-solid fa-check mr-1.5"></i> Direct Mark Present
+              <i class="fa-solid fa-check mr-1.5"></i> Direct Mark Present (10m)
             </button>
             <button type="button" onclick="openLeaveReasonBox('Half-Day')" class="liquid-btn glow-amber px-5 py-3.5 rounded-2xl text-xs font-black text-amber-400">Half-Day Request</button>
             <button type="button" onclick="openLeaveReasonBox('Leave')" class="liquid-btn glow-rose px-5 py-3.5 rounded-2xl text-xs font-black text-rose-400">Full Leave Request</button>
@@ -489,72 +598,35 @@
           <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800 flex justify-between items-center">
             <span class="text-xs font-bold text-slate-400">Today's Status:</span>
             <div class="flex items-center space-x-2">
-              <span id="attBadge" class="px-3 py-1 rounded-full text-xs font-black bg-slate-800 text-slate-400">Not Marked</span>
-              <span id="attTimestamp" class="text-xs font-mono text-slate-400"></span>
+              <span id="attBadge" class="px-3 py-1 rounded-full text-xs font-black bg-slate-800 text-slate-300">Not Marked</span>
+              <span id="attTimeText" class="text-xs text-slate-500 font-semibold"></span>
             </div>
           </div>
 
-          <!-- Staff Personal Monthly Stats (Vertical Stack) -->
-          <div class="flex flex-col gap-3 pt-2">
-            <div class="bg-slate-950 p-4 rounded-2xl border border-emerald-500/20 flex justify-between items-center">
-              <p class="text-[11px] font-black text-emerald-400 uppercase">Present</p>
-              <h4 id="staffStatP" class="text-2xl font-black text-white">0</h4>
-            </div>
-            <div class="bg-slate-950 p-4 rounded-2xl border border-rose-500/20 flex justify-between items-center">
-              <p class="text-[11px] font-black text-rose-400 uppercase">Absent</p>
-              <h4 id="staffStatA" class="text-2xl font-black text-white">0</h4>
-            </div>
-            <div class="bg-slate-950 p-4 rounded-2xl border border-amber-500/20 flex justify-between items-center">
-              <p class="text-[11px] font-black text-amber-400 uppercase">Leaves</p>
-              <h4 id="staffStatL" class="text-2xl font-black text-white">0</h4>
-            </div>
+          <div class="space-y-2 pt-2 border-t border-slate-800">
+            <h4 class="text-[11px] font-black uppercase tracking-wider text-slate-400">Recent Attendance History</h4>
+            <div id="staffAttHistoryList" class="space-y-2 text-xs"></div>
           </div>
         </div>
 
-        <!-- STAFF DUTIES TAB -->
-        <div id="section-myDuties" class="tab-panel glass-panel rounded-3xl p-6 space-y-6 hidden glow-blue">
-          <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-            <h3 class="text-xs font-black text-indigo-400 uppercase tracking-widest"><i class="fa-solid fa-list-check mr-2"></i>My Assigned Duties</h3>
-            <button type="button" onclick="openQrScanner('zoneCheck')" class="liquid-btn glow-purple px-4 py-2 rounded-xl text-xs font-black text-purple-400">
-              <i class="fa-solid fa-qrcode mr-1.5"></i> Scan Room / Zone QR
-            </button>
+        <!-- STAFF MY DUTIES TAB (5m RANGE) -->
+        <div id="section-myDuties" class="tab-panel glass-panel rounded-3xl p-6 space-y-4 hidden glow-blue">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <h3 class="text-xs font-black text-indigo-400 uppercase tracking-widest"><i class="fa-solid fa-list-check mr-2"></i>My Assigned Duties & Photo Proof (5m Radius)</h3>
+            <span class="text-[11px] font-mono text-cyan-400">Submit Radius: Max 5m</span>
           </div>
-          <div id="staffTaskList" class="space-y-4"></div>
-
-          <!-- Log Extra Self Work -->
-          <div class="bg-slate-950 p-5 rounded-3xl border border-slate-800 space-y-3">
-            <h4 class="text-xs font-black text-cyan-400 uppercase"><i class="fa-solid fa-plus-circle mr-1.5"></i>Log Extra Self Work (+15 Pts)</h4>
-            <div class="flex flex-col gap-3">
-              <input type="text" id="extraWorkInput" placeholder="e.g. Watered plants / Cleaned balcony..." class="w-full px-4 py-3 rounded-2xl bg-slate-900 border border-slate-800 text-xs font-semibold">
-              <button type="button" onclick="submitExtraSelfWork()" class="liquid-btn glow-cyan px-5 py-3 rounded-2xl text-xs font-black text-cyan-400">Submit Work</button>
-            </div>
-          </div>
+          <div id="staffTasksList" class="space-y-3"></div>
         </div>
 
-        <!-- STAFF DIGITAL ID CARD & POINTS TAB (VERTICAL STACK) -->
-        <div id="section-staffIdCard" class="tab-panel glass-panel rounded-3xl p-6 space-y-6 hidden glow-cyan">
-          <div class="flex flex-col gap-6">
-            <div class="bg-gradient-to-br from-indigo-950 via-slate-950 to-purple-950 p-6 rounded-3xl border border-indigo-500/30 text-center space-y-4 shadow-2xl">
-              <span class="px-3 py-1 rounded-full text-[10px] font-black bg-cyan-500/20 text-cyan-400 uppercase tracking-widest">Official Digital ID Card</span>
-              <div class="flex justify-center">
-                <div id="staffPersonalQr" class="qr-box"></div>
-              </div>
-              <div>
-                <h3 id="idCardName" class="text-lg font-black text-white">-</h3>
-                <p id="idCardId" class="text-xs font-mono text-indigo-400 font-bold">-</p>
-              </div>
-              <p class="text-[11px] text-slate-400">Show this QR to Admin or scan at login</p>
-            </div>
-
-            <div class="space-y-4">
-              <div class="bg-slate-950 p-5 rounded-3xl border border-amber-500/30">
-                <p class="text-xs font-black text-amber-400 uppercase">My Total Points</p>
-                <h2 id="staffMyPoints" class="text-4xl font-black text-white mt-1">0 Pts</h2>
-              </div>
-              <div class="bg-slate-950 p-5 rounded-3xl border border-slate-800 space-y-3">
-                <h4 class="text-xs font-black text-indigo-400 uppercase"><i class="fa-solid fa-trophy mr-1.5"></i>Team Leaderboard</h4>
-                <div id="staffLeaderboardList" class="space-y-2"></div>
-              </div>
+        <!-- STAFF ID QR & POINTS TAB -->
+        <div id="section-staffIdCard" class="tab-panel glass-panel rounded-3xl p-6 space-y-4 hidden glow-cyan">
+          <h3 class="text-xs font-black text-cyan-400 uppercase tracking-widest"><i class="fa-solid fa-id-card mr-2"></i>My ID QR Card & Reward Points</h3>
+          <div class="bg-slate-950 border border-cyan-500/30 rounded-3xl p-6 text-center space-y-3">
+            <p id="staffCardName" class="text-base font-black text-white"></p>
+            <p id="staffCardId" class="text-xs font-mono text-cyan-400 font-bold"></p>
+            <p id="staffCardPoints" class="text-sm font-black text-amber-400">0 Points</p>
+            <div class="flex justify-center py-2">
+              <div id="staffIdQrBox" class="qr-box"></div>
             </div>
           </div>
         </div>
@@ -563,1348 +635,1567 @@
     </main>
   </div>
 
-  <!-- MODAL: LIVE QR SCANNER -->
-  <div id="qrScannerModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md hidden flex items-center justify-center p-4 z-50">
-    <div class="glass-panel border-cyan-500/30 max-w-md w-full p-6 rounded-[2.5rem] shadow-2xl space-y-4 text-center">
-      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-        <h3 id="qrScannerTitle" class="text-sm font-black text-cyan-400"><i class="fa-solid fa-camera mr-1.5"></i>Scan QR Code</h3>
-        <button type="button" onclick="closeQrScanner()" class="text-slate-400 text-xl font-bold">&times;</button>
-      </div>
-      <div id="qrReaderBox" class="w-full rounded-2xl overflow-hidden bg-black border border-slate-800"></div>
-      <p id="qrScannerHint" class="text-xs text-slate-400">Point your camera at the QR Code</p>
+  <!-- ================= MODALS ================= -->
 
-      <div class="pt-3 border-t border-slate-800 space-y-2 text-left">
-        <label class="block text-[10px] font-black text-slate-500 uppercase">Or Enter QR Text Manually:</label>
-        <div class="flex gap-2">
-          <input type="text" id="manualQrTextInput" placeholder="e.g. HW_ATT_2026-11-21 or EMP:20260301" class="flex-1 px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs font-mono text-white">
-          <button type="button" onclick="processScannedQrText(document.getElementById('manualQrTextInput').value)" class="liquid-btn glow-cyan px-4 py-2 rounded-xl text-xs font-black text-cyan-400">Verify</button>
-        </div>
+  <!-- QR SCANNER MODAL -->
+  <div id="qrScannerModal" class="hidden fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass-panel border-cyan-500/30 max-w-md w-full p-6 rounded-[2.5rem] space-y-4 glow-cyan">
+      <div class="flex justify-between items-center">
+        <h3 class="text-sm font-black text-cyan-400 uppercase">Scan QR Code</h3>
+        <button type="button" onclick="closeQrScannerModal()" class="liquid-btn px-3 py-1.5 rounded-xl text-xs font-black text-slate-300">Close</button>
+      </div>
+      <div id="qrReaderBox" class="w-full rounded-2xl overflow-hidden bg-black min-h-[240px]"></div>
+      <p id="qrScannerStatus" class="text-xs text-center font-semibold text-slate-400">Point camera at QR code...</p>
+    </div>
+  </div>
+
+  <!-- DUTY PHOTO PROOF MODAL (5m GEOFENCE) -->
+  <div id="dutyProofModal" class="hidden fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass-panel border-indigo-500/30 max-w-md w-full p-6 rounded-[2.5rem] space-y-4 glow-purple">
+      <div class="flex justify-between items-center">
+        <h3 class="text-sm font-black text-indigo-400 uppercase">Submit Duty Photo Proof (5m Zone)</h3>
+        <button type="button" onclick="closeModal('dutyProofModal')" class="liquid-btn px-3 py-1.5 rounded-xl text-xs font-black text-slate-300">Close</button>
+      </div>
+      <p id="proofTaskTitleLabel" class="text-xs font-bold text-white"></p>
+      <div class="flex gap-2">
+        <label class="liquid-btn glow-cyan flex-1 py-2.5 rounded-xl text-xs font-black text-cyan-400 text-center cursor-pointer">
+          <i class="fa-solid fa-camera mr-1"></i> Take Photo
+          <input type="file" id="proofCameraInput" accept="image/*" capture="environment" onchange="handleProofFileChange(event)" class="hidden">
+        </label>
+        <label class="liquid-btn glow-blue flex-1 py-2.5 rounded-xl text-xs font-black text-blue-400 text-center cursor-pointer">
+          <i class="fa-solid fa-image mr-1"></i> Choose Photo
+          <input type="file" id="proofGalleryInput" accept="image/*" onchange="handleProofFileChange(event)" class="hidden">
+        </label>
+      </div>
+      <img id="proofPreviewImg" src="" alt="Proof Preview" class="hidden w-full h-44 object-cover rounded-2xl border border-slate-800">
+      <button type="button" onclick="submitDutyWithProof()" class="liquid-btn glow-emerald w-full py-3 rounded-2xl text-xs font-black text-emerald-400">Submit Duty (Verify 5m)</button>
+    </div>
+  </div>
+
+  <!-- ADD EMPLOYEE MODAL -->
+  <div id="addEmpModal" class="hidden fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass-panel border-emerald-500/30 max-w-md w-full p-6 rounded-[2.5rem] space-y-4 glow-emerald">
+      <h3 class="text-sm font-black text-emerald-400 uppercase">Add New Staff Member</h3>
+      <input type="text" id="newEmpId" placeholder="Employee ID" class="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs font-mono font-bold text-white uppercase">
+      <input type="text" id="newEmpName" placeholder="Full Name" class="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs font-semibold text-white">
+      <input type="text" id="newEmpRole" placeholder="Role" class="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs font-semibold text-white">
+      <div class="flex gap-3">
+        <button type="button" onclick="addNewEmployee()" class="liquid-btn glow-emerald flex-1 py-3 rounded-2xl text-xs font-black text-emerald-400">Create Staff</button>
+        <button type="button" onclick="closeModal('addEmpModal')" class="liquid-btn px-4 py-3 rounded-2xl text-xs font-bold text-slate-300">Cancel</button>
       </div>
     </div>
   </div>
 
-  <!-- MODAL: COMPLETE TASK WITH PHOTO PROOF -->
-  <div id="taskProofModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4 z-50">
-    <div class="glass-panel border-emerald-500/30 max-w-md w-full p-6 rounded-[2.5rem] shadow-2xl space-y-4">
-      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-        <h3 class="text-sm font-black text-emerald-400"><i class="fa-solid fa-camera mr-1.5"></i>Complete Duty & Photo Proof</h3>
-        <button type="button" onclick="cancelTaskProofModal()" class="text-slate-400 text-lg font-bold">&times;</button>
+  <!-- 1 AM AI ADMIN ACCOUNT CREATION MODAL (DAILY / WEEKLY / MONTHLY 1 AM) -->
+  <div id="createAdminModal" class="hidden fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass-panel border-amber-500/30 max-w-md w-full p-6 rounded-[2.5rem] space-y-4 glow-amber">
+      <h3 class="text-sm font-black text-amber-400 uppercase"><i class="fa-solid fa-robot mr-1.5"></i>Create AI Admin Account (1 AM Code)</h3>
+      <p class="text-[11px] text-slate-400">Active daily/weekly/monthly during 01:00 AM - 01:59 AM with the 1 AM code.</p>
+      <input type="text" id="adminCreateCodeInput" placeholder="1 AM Code" class="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs font-mono font-bold text-amber-300 uppercase">
+      <input type="text" id="newAdminIdInput" placeholder="Admin ID" class="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs font-mono font-bold text-white uppercase">
+      <input type="text" id="newAdminNameInput" placeholder="AI Admin Name" class="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs font-semibold text-white">
+      <p id="createAdminError" class="text-xs text-rose-400 font-bold hidden"></p>
+      <div class="flex gap-3">
+        <button type="button" onclick="createAdminWith1AmCode()" class="liquid-btn glow-amber flex-1 py-3 rounded-2xl text-xs font-black text-amber-300">Create AI Admin</button>
+        <button type="button" onclick="closeModal('createAdminModal')" class="liquid-btn px-4 py-3 rounded-2xl text-xs font-bold text-slate-300">Cancel</button>
       </div>
-      <input type="hidden" id="proofTaskTargetId">
-      <p id="proofTaskTitleText" class="text-xs text-slate-300 font-bold"></p>
-
-      <div class="space-y-2">
-        <label class="block text-xs font-bold text-slate-400">Work Photo Proof (Camera or Gallery)</label>
-        <input type="file" id="taskProofCameraInput" accept="image/*" capture="environment" onchange="handleTaskProofImage(event)" class="hidden">
-        <input type="file" id="taskProofGalleryInput" accept="image/*" onchange="handleTaskProofImage(event)" class="hidden">
-        <div class="flex gap-2">
-          <button type="button" onclick="document.getElementById('taskProofCameraInput').click()" class="liquid-btn glow-emerald flex-1 py-2.5 rounded-xl text-xs font-black text-emerald-400">
-            <i class="fa-solid fa-camera mr-1.5"></i> Take Photo
-          </button>
-          <button type="button" onclick="document.getElementById('taskProofGalleryInput').click()" class="liquid-btn flex-1 py-2.5 rounded-xl text-xs font-black text-slate-200">
-            <i class="fa-solid fa-image mr-1.5"></i> Choose Photo
-          </button>
-        </div>
-        <p id="taskProofStatusText" class="text-[11px] text-slate-400"></p>
-        <div id="taskProofPreview" class="mt-2 hidden"></div>
-      </div>
-
-      <div>
-        <label class="block text-xs font-bold text-slate-400 mb-1">Completion Note</label>
-        <input type="text" id="taskProofNoteInput" oninput="persistProofDraft()" placeholder="e.g. Done properly" class="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs font-semibold">
-      </div>
-      <button type="button" onclick="confirmCompleteTaskWithProof()" class="liquid-btn glow-emerald w-full py-3.5 rounded-2xl text-xs font-black text-emerald-400">Submit & Mark Completed</button>
     </div>
   </div>
 
-  <!-- MODAL: ADD EMPLOYEE -->
-  <div id="addEmpModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4 z-50">
-    <div class="glass-panel border-slate-800 max-w-md w-full p-6 rounded-[2.5rem] shadow-2xl space-y-4">
-      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-        <h3 class="text-sm font-black text-white">Add New Employee</h3>
-        <button type="button" onclick="closeModal('addEmpModal')" class="text-slate-400 text-lg font-bold">&times;</button>
+  <!-- BAN ACCOUNT MODAL -->
+  <div id="banModal" class="hidden fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass-panel border-rose-500/30 max-w-md w-full p-6 rounded-[2.5rem] space-y-4 glow-rose">
+      <h3 class="text-sm font-black text-rose-400 uppercase">Suspend Staff Account</h3>
+      <p id="banTargetLabel" class="text-xs font-bold text-white"></p>
+      <input type="text" id="banReasonInput" placeholder="Reason for ban..." class="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs font-semibold text-white">
+      <input type="number" id="banHoursInput" value="24" min="1" max="8760" placeholder="Duration in hours" class="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs font-mono font-bold text-white">
+      <div class="flex gap-3">
+        <button type="button" onclick="confirmBanUser()" class="liquid-btn glow-rose flex-1 py-3 rounded-2xl text-xs font-black text-rose-400">Confirm Ban</button>
+        <button type="button" onclick="closeModal('banModal')" class="liquid-btn px-4 py-3 rounded-2xl text-xs font-bold text-slate-300">Cancel</button>
       </div>
-      <div>
-        <label class="block text-xs font-bold text-slate-400 mb-1">Full Name</label>
-        <input type="text" id="newEmpName" placeholder="Name" class="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs font-semibold">
-      </div>
-      <div>
-        <label class="block text-xs font-bold text-slate-400 mb-1">Employee ID</label>
-        <input type="text" id="newEmpId" placeholder="ID (e.g. 20260306)" class="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs font-mono font-bold uppercase">
-      </div>
-      <button type="button" onclick="saveNewEmployee()" class="liquid-btn glow-emerald w-full py-3.5 rounded-2xl text-xs font-black text-emerald-400">Add Employee</button>
     </div>
   </div>
 
-  <!-- MODAL: BAN EMPLOYEE -->
-  <div id="banEmpModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4 z-50">
-    <div class="glass-panel border-rose-500/30 max-w-md w-full p-6 rounded-[2.5rem] shadow-2xl space-y-4">
-      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-        <h3 class="text-sm font-black text-rose-500">Ban Account</h3>
-        <button type="button" onclick="closeModal('banEmpModal')" class="text-slate-400 text-lg font-bold">&times;</button>
+  <!-- ADJUST POINTS MODAL -->
+  <div id="adjustPointsModal" class="hidden fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass-panel border-amber-500/30 max-w-md w-full p-6 rounded-[2.5rem] space-y-4 glow-amber">
+      <h3 class="text-sm font-black text-amber-400 uppercase">Adjust / Fix Staff Points</h3>
+      <p id="pointsTargetLabel" class="text-xs font-bold text-white"></p>
+      <input type="number" id="pointsExactInput" placeholder="Set total points (e.g. 120)" class="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs font-mono font-bold text-white">
+      <div class="flex gap-3">
+        <button type="button" onclick="saveAdjustedPoints()" class="liquid-btn glow-amber flex-1 py-3 rounded-2xl text-xs font-black text-amber-300">Save Points</button>
+        <button type="button" onclick="closeModal('adjustPointsModal')" class="liquid-btn px-4 py-3 rounded-2xl text-xs font-bold text-slate-300">Cancel</button>
       </div>
-      <input type="hidden" id="banEmpTargetId">
-      <div>
-        <label class="block text-xs font-bold text-slate-400 mb-1">Ban Type</label>
-        <select id="banTypeSelect" onchange="toggleBanDuration(this.value)" class="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs font-bold text-white">
-          <option value="Temporary">Temporary Ban</option>
-          <option value="Permanent">Permanent Ban</option>
-        </select>
-      </div>
-      <div id="tempTimeGroup">
-        <label class="block text-xs font-bold text-slate-400 mb-1">Duration</label>
-        <select id="banDurationSelect" class="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs font-bold text-white">
-          <option value="1">1 Hour</option>
-          <option value="24">24 Hours</option>
-          <option value="72">3 Days</option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-xs font-bold text-slate-400 mb-1">Reason</label>
-        <textarea id="banReasonInput" rows="2" placeholder="Write suspension reason..." class="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs font-semibold"></textarea>
-      </div>
-      <button type="button" onclick="confirmBanEmployee()" class="liquid-btn glow-rose w-full py-3.5 rounded-2xl text-xs font-black text-rose-400">Apply Ban</button>
     </div>
   </div>
 
-  <!-- MODAL: DUTY TRANSFER -->
-  <div id="transferDutyModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4 z-50">
-    <div class="glass-panel border-amber-500/30 max-w-md w-full p-6 rounded-[2.5rem] shadow-2xl space-y-4">
-      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-        <h3 class="text-sm font-black text-amber-400"><i class="fa-solid fa-right-left mr-1.5"></i>Transfer Duty</h3>
-        <button type="button" onclick="closeModal('transferDutyModal')" class="text-slate-400 text-lg font-bold">&times;</button>
+  <!-- USER ACCOUNT / UPDATE REQUEST MODAL -->
+  <div id="userRequestModal" class="hidden fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass-panel border-cyan-500/30 max-w-md w-full p-6 rounded-[2.5rem] space-y-4 glow-cyan">
+      <h3 class="text-sm font-black text-cyan-400 uppercase">Request New Account / Profile Update</h3>
+      <input type="text" id="reqEmpName" placeholder="Your Full Name" class="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs font-semibold text-white">
+      <input type="text" id="reqEmpId" placeholder="Employee ID" class="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs font-mono font-bold text-white uppercase">
+      <input type="text" id="reqEmpRole" placeholder="Role" class="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs font-semibold text-white">
+      <div class="flex gap-3">
+        <button type="button" onclick="submitAccountRequest()" class="liquid-btn glow-cyan flex-1 py-3 rounded-2xl text-xs font-black text-cyan-400">Send Request</button>
+        <button type="button" onclick="closeModal('userRequestModal')" class="liquid-btn px-4 py-3 rounded-2xl text-xs font-bold text-slate-300">Cancel</button>
       </div>
-      <input type="hidden" id="transferTaskTargetId">
-      <p id="transferTaskInfoText" class="text-xs text-slate-300 font-semibold bg-slate-950 p-3 rounded-xl border border-slate-800"></p>
-      <div>
-        <label class="block text-xs font-bold text-slate-400 mb-1">Transfer To Staff</label>
-        <select id="transferToEmpSelect" class="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs font-bold text-white"></select>
-      </div>
-      <div>
-        <label class="block text-xs font-bold text-slate-400 mb-1">Reason for Transfer</label>
-        <input type="text" id="transferDutyReason" placeholder="e.g. Busy / Away from home" class="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs font-semibold">
-      </div>
-      <button type="button" onclick="confirmDutyTransfer()" class="liquid-btn glow-amber w-full py-3.5 rounded-2xl text-xs font-black text-amber-400">Confirm Transfer</button>
-    </div>
-  </div>
-
-  <!-- MODAL: ACCOUNT REQUEST -->
-  <div id="userReqModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4 z-50">
-    <div class="glass-panel border-slate-800 max-w-md w-full p-6 rounded-[2.5rem] shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
-      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-        <h3 class="text-sm font-black text-white">Account Request</h3>
-        <button type="button" onclick="closeModal('userReqModal')" class="text-slate-400 text-lg font-bold">&times;</button>
-      </div>
-      
-      <div>
-        <label class="block text-xs font-bold text-slate-400 mb-1">Auto-Generated ID</label>
-        <input type="text" id="reqAutoGeneratedId" readonly class="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs font-mono font-bold text-indigo-400">
-      </div>
-
-      <div>
-        <label class="block text-xs font-bold text-slate-400 mb-1">Full Name</label>
-        <input type="text" id="reqFullName" placeholder="Name" class="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs font-semibold">
-      </div>
-
-      <div>
-        <label class="block text-xs font-bold text-slate-400 mb-1">Reason / Details</label>
-        <textarea id="reqDetailsInput" rows="2" placeholder="Why do you need this account?" class="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs font-semibold"></textarea>
-      </div>
-
-      <div class="space-y-2 border-t border-slate-800 pt-3">
-        <label class="block text-xs font-bold text-slate-400 uppercase">Profile Photo (Camera or Gallery)</label>
-        <div class="flex items-center space-x-3">
-          <div id="reqPhotoPreview" class="w-14 h-14 rounded-2xl bg-indigo-600 flex items-center justify-center font-black text-white text-base overflow-hidden">?</div>
-          <div>
-            <input type="file" id="reqFileInput" accept="image/*" onchange="handleFileSelect(event)" class="hidden">
-            <input type="file" id="reqCameraInput" accept="image/*" capture="user" onchange="handleFileSelect(event)" class="hidden">
-            
-            <button type="button" onclick="document.getElementById('reqCameraInput').click()" class="liquid-btn glow-cyan px-3 py-1.5 rounded-xl text-[11px] font-black text-cyan-400 mr-1 mb-1">
-              <i class="fa-solid fa-camera mr-1"></i> Camera
-            </button>
-            <button type="button" onclick="document.getElementById('reqFileInput').click()" class="liquid-btn px-3 py-1.5 rounded-xl text-[11px] font-black text-slate-300">
-              <i class="fa-solid fa-image mr-1"></i> Gallery
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <button type="button" onclick="submitUserRequest()" class="liquid-btn glow-cyan w-full py-3.5 rounded-2xl text-xs font-black text-cyan-400">Submit Request</button>
     </div>
   </div>
 
   <script>
+    // ================= FIREBASE INIT =================
     const firebaseConfig = {
-      apiKey: "AIzaSyDdlqepl8-x2XLWEdI7viCRuNSsafZYnPI",
-      authDomain: "dsmkfsaf.firebaseapp.com",
-      databaseURL: "https://dsmkfsaf-default-rtdb.firebaseio.com",
-      projectId: "dsmkfsaf",
-      storageBucket: "dsmkfsaf.firebasestorage.app",
-      messagingSenderId: "916158344887",
-      appId: "1:916158344887:web:86777f199ccf281407e732",
-      measurementId: "G-6T9K252VQX"
+      databaseURL: "https://dsmkfsaf-default-rtdb.firebaseio.com"
     };
-
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    const defaultEmployees = [
-      { id: "ADMIN20260306", name: "Head Admin", role: "admin", status: "active", photo: "", banUntil: null, banReason: "" },
-      { id: "20260301", name: "Ritvik", role: "staff", status: "active", photo: "", banUntil: null, banReason: "" },
-      { id: "20260302", name: "Trisha", role: "staff", status: "active", photo: "", banUntil: null, banReason: "" },
-      { id: "20260303", name: "Akshit", role: "staff", status: "active", photo: "", banUntil: null, banReason: "" },
-      { id: "20260304", name: "Anjali", role: "staff", status: "active", photo: "", banUntil: null, banReason: "" },
-      { id: "20260305", name: "Sandeep", role: "staff", status: "active", photo: "", banUntil: null, banReason: "" }
-    ];
+    // ================= CONFIG (1 AM WINDOW + GEOFENCE + GEMINI) =================
+    const ONE_AM_CREATE_ADMIN_CODE = "1AM-ADMIN-KEY";
+    const ONE_AM_UNLOCK_APP_CODE = "1AM-UNLOCK-KEY";
+    const ATTENDANCE_RADIUS_METERS = 10;
+    const DUTY_SUBMIT_RADIUS_METERS = 5;
+    const GEMINI_MODEL = "gemini-4-hydrogen";
+    const DEFAULT_GEMINI_API_KEY = "AQ.Ab8RN6JoA-xTeRF77YXdC0FJlOZt-S9qqteDuLjVahVTlf0pqw";
 
-    const syncedKeys = [
-      'hw_employees',
-      'hw_tasks',
-      'hw_attendance',
-      'hw_account_requests',
-      'hw_leave_requests',
-      'hw_announcement',
-      'hw_sos_alerts',
-      'hw_extra_work'
-    ];
-
-    let currentReqPhotoBase64 = "";
-    let currentTaskProofBase64 = "";
-    let currentUser = getData('hw_active_user', null);
-    let currentLeaveType = 'Leave';
-    let html5QrScannerInstance = null;
-    let currentScanPurpose = 'attendance';
-    let isInitialEmployeesSeeded = false;
-
-    function getData(key, def) {
-      const val = localStorage.getItem(key);
-      return val ? JSON.parse(val) : def;
-    }
-
-    function saveData(key, val) {
-      localStorage.setItem(key, JSON.stringify(val));
-      if (key !== 'hw_active_user' && key !== 'hw_pending_proof' && typeof db !== 'undefined') {
-        db.ref('portal/' + key).set(val).catch((err) => console.error('Firebase write error:', err));
-      }
-    }
-
-    function startRealtimeSync() {
-      if (typeof db === 'undefined') return;
-      syncedKeys.forEach((key) => {
-        db.ref('portal/' + key).on('value', (snapshot) => {
-          const data = snapshot.val();
-          if (data !== null) {
-            const normalized = Array.isArray(data) ? data.filter(Boolean) : data;
-            localStorage.setItem(key, JSON.stringify(normalized));
-            if (key === 'hw_announcement') renderAnnouncement();
-            if (currentUser && currentUser.role === 'admin') {
-              renderAdminDashboard();
-            } else if (currentUser && currentUser.role === 'staff') {
-              const freshEmps = getData('hw_employees', defaultEmployees);
-              const me = freshEmps.find(e => e.id === currentUser.id);
-              if (me && isUserBanned(me)) {
-                showBanScreen(me);
-                return;
-              }
-              renderStaffDashboard();
-            }
-          } else if (key === 'hw_employees' && !isInitialEmployeesSeeded) {
-            isInitialEmployeesSeeded = true;
-            saveData('hw_employees', getData('hw_employees', defaultEmployees));
-          }
-        });
-      });
-    }
-
-    function getTodayDate() {
-      const d = new Date();
-      const year = d.getFullYear();
-      const month = String(d.getMonth() + 1).padStart(2, '0');
-      const day = String(d.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
-    }
-
-    function compressImageFile(file, maxWidth = 800, quality = 0.72) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onerror = () => reject(new Error("File read failed"));
-        reader.onload = (e) => {
-          const img = new Image();
-          img.onerror = () => resolve(e.target.result);
-          img.onload = () => {
-            let width = img.width;
-            let height = img.height;
-            if (width > maxWidth) {
-              height = Math.round((height * maxWidth) / width);
-              width = maxWidth;
-            }
-            const canvas = document.createElement('canvas');
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, width, height);
-            resolve(canvas.toDataURL('image/jpeg', quality));
-          };
-          img.src = e.target.result;
-        };
-        reader.readAsDataURL(file);
-      });
-    }
-
-    window.onload = function() {
-      if (!localStorage.getItem('hw_employees')) {
-        localStorage.setItem('hw_employees', JSON.stringify(defaultEmployees));
-      }
-      const dateInput = document.getElementById('adminAttDateInput');
-      if (dateInput) dateInput.value = getTodayDate();
-
-      startRealtimeSync();
-
-      if (currentUser) {
-        const emps = getData('hw_employees', defaultEmployees);
-        const fresh = emps.find(e => e.id === currentUser.id);
-        if (fresh && isUserBanned(fresh)) {
-          showBanScreen(fresh);
-        } else if (fresh) {
-          loginUser(fresh);
-          restorePendingProofDraft();
-        }
+    // ================= STATE =================
+    let portalState = {
+      employees: {},
+      attendance: {},
+      tasks: {},
+      leaveRequests: {},
+      accountRequests: {},
+      sosAlerts: {},
+      sessions: {},
+      announcement: null,
+      aiConfig: {
+        autonomous: true,
+        apiKey: DEFAULT_GEMINI_API_KEY,
+        logs: []
+      },
+      appLock: {
+        isLocked: false,
+        reason: "",
+        lockedBy: "AI ADMIN"
+      },
+      zoneGps: {
+        lat: null,
+        lng: null,
+        label: "Kitchen / Work Zone"
       }
     };
 
+    let currentUser = null;
+    let currentSessionId = null;
+    const localDeviceId = (() => {
+      let d = localStorage.getItem("hw_device_id");
+      if (!d) {
+        d = "DEV-" + Math.random().toString(36).substring(2, 10).toUpperCase();
+        localStorage.setItem("hw_device_id", d);
+      }
+      return d;
+    })();
+
+    let pendingLeaveType = "Leave";
+    let activeProofTaskId = null;
+    let compressedProofDataUrl = "";
+    let banTargetId = null;
+    let pointsTargetId = null;
+    let html5QrScanner = null;
+    let qrScanMode = null;
+
+    // ================= HELPERS =================
+    function getTodayKey() {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, "0");
+      const d = String(now.getDate()).padStart(2, "0");
+      return `${y}-${m}-${d}`;
+    }
+
+    function isOneAmWindow() {
+      return new Date().getHours() === 1;
+    }
+
+    function getSafePoints(emp) {
+      const n = Number(emp && emp.points);
+      return Number.isFinite(n) ? n : 0;
+    }
+
     function openModal(id) {
       const el = document.getElementById(id);
-      if (el) el.classList.remove('hidden');
+      if (el) el.classList.remove("hidden");
     }
 
     function closeModal(id) {
       const el = document.getElementById(id);
-      if (el) el.classList.add('hidden');
+      if (el) el.classList.add("hidden");
     }
 
-    function switchMainTab(tabId) {
-      const containerId = (currentUser && currentUser.role === 'admin') ? '#adminPanel' : '#staffPanel';
-      document.querySelectorAll(`${containerId} .tab-panel`).forEach(el => el.classList.add('hidden'));
-      document.querySelectorAll('#verticalNavGroup button').forEach(btn => btn.classList.remove('active-tab'));
-
-      const targetPanel = document.getElementById('section-' + tabId);
-      if (targetPanel) targetPanel.classList.remove('hidden');
-
-      const targetBtn = document.getElementById('navBtn-' + tabId);
-      if (targetBtn) targetBtn.classList.add('active-tab');
-
-      if (tabId === 'qrHub') renderAdminQrHub();
-      if (tabId === 'staffIdCard') renderStaffIdCard();
+    function setDbStatus(msg, isError = false) {
+      const el = document.getElementById("dbSyncStatus");
+      if (!el) return;
+      el.textContent = msg;
+      el.className = isError
+        ? "text-[10px] font-mono text-rose-400 mt-1"
+        : "text-[10px] font-mono text-emerald-400 mt-1";
     }
 
-    function generateNextEmployeeId() {
-      const emps = getData('hw_employees', defaultEmployees);
-      const numericIds = emps.map(e => parseInt(e.id)).filter(n => !isNaN(n));
-      const maxId = numericIds.length ? Math.max.apply(null, numericIds) : 20260305;
-      return (maxId + 1).toString();
+    function distanceInMeters(lat1, lon1, lat2, lon2) {
+      const toRad = (deg) => (deg * Math.PI) / 180;
+      const R = 6371000;
+      const dLat = toRad(lat2 - lat1);
+      const dLon = toRad(lon2 - lon1);
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     }
 
-    function getEmployeePoints(empId) {
-      const tasks = getData('hw_tasks', []).filter(t => t.empId === empId && t.status === 'Completed');
-      const taskPts = tasks.reduce((sum, t) => sum + (parseInt(t.points) || 20), 0);
-      const att = getData('hw_attendance', []).filter(a => a.empId === empId && a.status === 'Present');
-      const attPts = att.length * 10;
-      const extra = getData('hw_extra_work', []).filter(w => w.empId === empId);
-      const extraPts = extra.length * 15;
-      return taskPts + attPts + extraPts;
-    }
-
-    function isUserBanned(emp) {
-      if (emp.status !== 'banned') return false;
-      if (emp.banUntil && Date.now() > emp.banUntil) {
-        const emps = getData('hw_employees', defaultEmployees);
-        const idx = emps.findIndex(e => e.id === emp.id);
-        if (idx !== -1) {
-          emps[idx].status = 'active';
-          emps[idx].banUntil = null;
-          emps[idx].banReason = '';
-          saveData('hw_employees', emps);
+    function getDeviceGps() {
+      return new Promise((resolve, reject) => {
+        if (!navigator.geolocation) {
+          reject(new Error("GPS / Geolocation is not supported on this device."));
+          return;
         }
-        return false;
-      }
-      return true;
-    }
-
-    function showBanScreen(emp) {
-      document.getElementById('loginSection').classList.add('hidden');
-      document.getElementById('dashboardSection').classList.add('hidden');
-      document.getElementById('banSection').classList.remove('hidden');
-      document.getElementById('banReasonDisplay').innerText = emp.banReason || "Policy violation";
-      document.getElementById('banTimeDisplay').innerText = emp.banUntil
-        ? new Date(emp.banUntil).toLocaleString()
-        : "Permanent";
-    }
-
-    function goBackToLogin() {
-      currentUser = null;
-      localStorage.removeItem('hw_active_user');
-      document.getElementById('banSection').classList.add('hidden');
-      document.getElementById('dashboardSection').classList.add('hidden');
-      document.getElementById('loginSection').classList.remove('hidden');
-    }
-
-    function handleLogin() {
-      const id = document.getElementById('empIdInput').value.trim().toUpperCase();
-      const errEl = document.getElementById('loginError');
-      errEl.classList.add('hidden');
-
-      if (!id) {
-        errEl.innerText = "Please enter your Employee ID.";
-        errEl.classList.remove('hidden');
-        return;
-      }
-
-      const emps = getData('hw_employees', defaultEmployees);
-      const user = emps.find(e => e.id.toUpperCase() === id);
-
-      if (!user) {
-        errEl.innerText = "Invalid Employee ID! Check ID or request a new account.";
-        errEl.classList.remove('hidden');
-        return;
-      }
-
-      if (isUserBanned(user)) {
-        showBanScreen(user);
-        return;
-      }
-
-      loginUser(user);
-    }
-
-    function loginUser(user) {
-      currentUser = user;
-      saveData('hw_active_user', user);
-
-      document.getElementById('loginSection').classList.add('hidden');
-      document.getElementById('banSection').classList.add('hidden');
-      document.getElementById('dashboardSection').classList.remove('hidden');
-
-      document.getElementById('userNameDisplay').innerText = user.name;
-      document.getElementById('userRoleBadge').innerText = user.role.toUpperCase();
-
-      const avatarEl = document.getElementById('userHeaderAvatar');
-      if (user.photo) {
-        avatarEl.innerHTML = `<img src="${user.photo}" class="w-full h-full object-cover">`;
-      } else {
-        avatarEl.innerText = user.name.charAt(0).toUpperCase();
-      }
-
-      renderAnnouncement();
-
-      if (user.role === 'admin') {
-        document.getElementById('adminNavButtons').classList.remove('hidden');
-        document.getElementById('staffNavButtons').classList.add('hidden');
-        document.getElementById('adminPanel').classList.remove('hidden');
-        document.getElementById('staffPanel').classList.add('hidden');
-        renderAdminDashboard();
-        switchMainTab('overview');
-      } else {
-        document.getElementById('staffNavButtons').classList.remove('hidden');
-        document.getElementById('adminNavButtons').classList.add('hidden');
-        document.getElementById('staffPanel').classList.remove('hidden');
-        document.getElementById('adminPanel').classList.add('hidden');
-        renderStaffDashboard();
-        switchMainTab('attendance');
-      }
-    }
-
-    function handleLogout() {
-      currentUser = null;
-      localStorage.removeItem('hw_active_user');
-      localStorage.removeItem('hw_pending_proof');
-      document.getElementById('empIdInput').value = '';
-      document.getElementById('dashboardSection').classList.add('hidden');
-      document.getElementById('loginSection').classList.remove('hidden');
-    }
-
-    function renderQrToElement(elementId, text, size = 140) {
-      const container = document.getElementById(elementId);
-      if (!container) return;
-      container.innerHTML = "";
-      new QRCode(container, {
-        text: text,
-        width: size,
-        height: size,
-        colorDark: "#000000",
-        colorLight: "#ffffff",
-        correctLevel: QRCode.CorrectLevel.H
+        navigator.geolocation.getCurrentPosition(
+          (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+          (err) => reject(new Error(err.message || "Location permission denied.")),
+          { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
       });
     }
 
-    function renderAdminQrHub() {
-      const today = getTodayDate();
-      const dailyCode = `HW_ATT_${today}`;
-      renderQrToElement('adminDailyAttQr', dailyCode, 140);
-      document.getElementById('adminDailyAttCodeText').innerText = dailyCode;
-
-      generateZoneQr();
-
-      const emps = getData('hw_employees', defaultEmployees);
-      const sel = document.getElementById('qrEmpSelect');
-      if (sel) {
-        sel.innerHTML = emps.map(e => `<option value="${e.id}">${e.name} (${e.id})</option>`).join('');
-        generateSelectedEmpQr();
+    async function checkZoneRadius(maxMeters, actionName) {
+      const z = portalState.zoneGps;
+      if (typeof z.lat !== "number" || typeof z.lng !== "number") {
+        alert("Work zone GPS is not set yet. AI Admin must save the zone location first.");
+        return false;
+      }
+      try {
+        const pos = await getDeviceGps();
+        const dist = distanceInMeters(pos.lat, pos.lng, z.lat, z.lng);
+        if (dist > maxMeters) {
+          alert(`${actionName} allowed only within ${maxMeters}m of ${z.label || "zone"}. Current distance: ${dist.toFixed(1)}m.`);
+          return false;
+        }
+        return true;
+      } catch (err) {
+        alert(`${actionName} GPS check failed: ${err.message}`);
+        return false;
       }
     }
 
-    function generateZoneQr() {
-      const zone = document.getElementById('qrZoneSelect').value;
-      const code = `HW_ZONE_${zone}`;
-      renderQrToElement('adminZoneQr', code, 140);
-      document.getElementById('adminZoneCodeText').innerText = code;
+    function appendAiLog(text) {
+      const line = `[${new Date().toLocaleTimeString()}] ${text}`;
+      const list = Array.isArray(portalState.aiConfig.logs) ? portalState.aiConfig.logs.slice(-29) : [];
+      list.unshift(line);
+      db.ref("portal/hw_ai_config/logs").set(list);
     }
 
-    function generateSelectedEmpQr() {
-      const empId = document.getElementById('qrEmpSelect').value;
-      const code = `EMP:${empId}`;
-      renderQrToElement('adminEmpIdQr', code, 140);
-      document.getElementById('adminEmpCodeText').innerText = code;
+    // ================= REALTIME LISTENERS =================
+    function initRealtimeListeners() {
+      db.ref(".info/connected").on("value", (snap) => {
+        if (snap.val() === true) {
+          setDbStatus("Firebase live connected", false);
+        } else {
+          setDbStatus("Firebase reconnecting...", true);
+        }
+      }, (err) => {
+        setDbStatus("Firebase error: " + err.message, true);
+      });
+
+      db.ref("portal/hw_employees").on("value", (snap) => {
+        portalState.employees = snap.val() || {};
+        if (currentUser) {
+          if (!portalState.employees[currentUser.id]) {
+            alert("This account has been deleted by Admin.");
+            currentUser = null;
+            currentSessionId = null;
+            localStorage.removeItem("hw_session_data");
+            goBackToLogin();
+            return;
+          }
+          currentUser = portalState.employees[currentUser.id];
+          if (currentUser.bannedUntil && currentUser.bannedUntil > Date.now()) {
+            showBanScreen(currentUser);
+            return;
+          }
+        }
+        renderAllViews();
+      });
+
+      db.ref("portal/hw_attendance").on("value", (snap) => {
+        portalState.attendance = snap.val() || {};
+        renderAllViews();
+      });
+
+      db.ref("portal/hw_tasks").on("value", (snap) => {
+        portalState.tasks = snap.val() || {};
+        renderAllViews();
+      });
+
+      db.ref("portal/hw_leave_requests").on("value", (snap) => {
+        portalState.leaveRequests = snap.val() || {};
+        if (currentUser && currentUser.isAdmin && portalState.aiConfig.autonomous) {
+          runAiAutonomousEngine(false);
+        }
+        renderAllViews();
+      });
+
+      db.ref("portal/hw_account_requests").on("value", (snap) => {
+        portalState.accountRequests = snap.val() || {};
+        renderAllViews();
+      });
+
+      db.ref("portal/hw_sos").on("value", (snap) => {
+        portalState.sosAlerts = snap.val() || {};
+        renderAllViews();
+      });
+
+      db.ref("portal/hw_announcement").on("value", (snap) => {
+        portalState.announcement = snap.val();
+        renderAnnouncement();
+      });
+
+      db.ref("portal/hw_ai_config").on("value", (snap) => {
+        const val = snap.val() || {};
+        portalState.aiConfig = {
+          autonomous: val.autonomous !== undefined ? val.autonomous : true,
+          apiKey: val.apiKey || DEFAULT_GEMINI_API_KEY,
+          logs: Array.isArray(val.logs) ? val.logs : []
+        };
+        renderAiControls();
+      });
+
+      db.ref("portal/hw_app_lock").on("value", (snap) => {
+        const val = snap.val() || {};
+        portalState.appLock = {
+          isLocked: Boolean(val.isLocked),
+          reason: val.reason || "",
+          lockedBy: val.lockedBy || "AI ADMIN"
+        };
+        renderAppLock();
+      });
+
+      db.ref("portal/hw_zone_gps").on("value", (snap) => {
+        const val = snap.val() || {};
+        portalState.zoneGps = {
+          lat: typeof val.lat === "number" ? val.lat : null,
+          lng: typeof val.lng === "number" ? val.lng : null,
+          label: val.label || "Kitchen / Work Zone"
+        };
+        renderZoneGps();
+      });
+
+      // Single-Device Session Lock
+      db.ref("portal/hw_sessions").on("value", (snap) => {
+        portalState.sessions = snap.val() || {};
+        if (currentUser && currentSessionId) {
+          const rec = portalState.sessions[currentUser.id];
+          if (rec && rec.sessionId && rec.sessionId !== currentSessionId) {
+            alert("This account was logged in on another device. Current session ended.");
+            currentUser = null;
+            currentSessionId = null;
+            localStorage.removeItem("hw_session_data");
+            goBackToLogin();
+          }
+        }
+      });
     }
 
-    function renderStaffIdCard() {
-      if (!currentUser) return;
-      document.getElementById('idCardName').innerText = currentUser.name;
-      document.getElementById('idCardId').innerText = `ID: ${currentUser.id}`;
-      renderQrToElement('staffPersonalQr', `EMP:${currentUser.id}`, 160);
+    // ================= APP LOCK & URGENT UNLOCK =================
+    function lockAppNow(lockedBy = "AI ADMIN") {
+      const reasonEl = document.getElementById("lockReasonInput");
+      const reason = (reasonEl && reasonEl.value.trim()) || "Locked by AI Admin";
+      db.ref("portal/hw_app_lock").set({
+        isLocked: true,
+        reason,
+        lockedBy,
+        lockedAt: Date.now()
+      });
+      appendAiLog(`App LOCKED (${lockedBy}): ${reason}`);
+      if (reasonEl) reasonEl.value = "";
     }
 
-    function openQrScanner(purpose) {
-      currentScanPurpose = purpose;
-      const titles = {
-        login: 'Scan Employee ID Card QR to Login',
-        attendance: 'Scan Daily Attendance QR',
-        zoneCheck: 'Scan Room / Zone Checkpoint QR',
-        adminInspect: 'Scan Employee ID QR for Report'
-      };
-      document.getElementById('qrScannerTitle').innerHTML = `<i class="fa-solid fa-camera mr-1.5"></i>${titles[purpose] || 'Scan QR'}`;
-      document.getElementById('manualQrTextInput').value = '';
-      document.getElementById('qrScannerHint').innerText = 'Point your camera at the QR Code';
-      openModal('qrScannerModal');
+    function urgentUnlockWithAdminId() {
+      const input = document.getElementById("urgentUnlockAdminIdInput");
+      const err = document.getElementById("unlockErrorMsg");
+      const adminId = (input.value || "").trim().toUpperCase();
+      err.classList.add("hidden");
 
-      const startCamera = () => {
-        html5QrScannerInstance = new Html5Qrcode("qrReaderBox");
-        html5QrScannerInstance.start(
-          { facingMode: "environment" },
-          {
-            fps: 15,
-            qrbox: (viewfinderWidth, viewfinderHeight) => {
-              const edge = Math.floor(Math.min(viewfinderWidth, viewfinderHeight) * 0.7);
-              return { width: Math.max(160, edge), height: Math.max(160, edge) };
-            }
-          },
-          async (decodedText) => {
-            await closeQrScanner();
-            processScannedQrText(decodedText);
-          },
-          () => {}
-        ).catch(() => {
-          document.getElementById('qrScannerHint').innerText = "Camera access blocked or unavailable — use manual QR code box below.";
+      if (!adminId) {
+        err.textContent = "Please enter your Admin ID.";
+        err.classList.remove("hidden");
+        return;
+      }
+
+      const verifyAndUnlock = (emp) => {
+        if (!emp || !emp.isAdmin) {
+          err.textContent = `ID "${adminId}" is not a valid Admin account.`;
+          err.classList.remove("hidden");
+          return;
+        }
+        if (emp.bannedUntil && emp.bannedUntil > Date.now()) {
+          err.textContent = `Admin ID "${adminId}" is suspended.`;
+          err.classList.remove("hidden");
+          return;
+        }
+        input.value = "";
+        db.ref("portal/hw_app_lock").set({
+          isLocked: false,
+          reason: "",
+          lockedBy: adminId,
+          unlockedAt: Date.now()
         });
+        appendAiLog(`App URGENT UNLOCKED by Admin ID: ${adminId} (${emp.name || "Admin"}).`);
       };
 
-      if (html5QrScannerInstance) {
-        html5QrScannerInstance.stop()
-          .then(() => html5QrScannerInstance.clear())
-          .catch(() => {})
-          .finally(startCamera);
+      if (portalState.employees[adminId]) {
+        verifyAndUnlock(portalState.employees[adminId]);
       } else {
-        startCamera();
+        db.ref(`portal/hw_employees/${adminId}`).once("value", (snap) => {
+          verifyAndUnlock(snap.val());
+        });
       }
     }
 
-    async function closeQrScanner() {
-      if (html5QrScannerInstance) {
-        try {
-          await html5QrScannerInstance.stop();
-          await html5QrScannerInstance.clear();
-        } catch (e) {}
-        html5QrScannerInstance = null;
+    function promptUnlockWith1Am() {
+      const code = prompt("Enter 1 AM Unlock Code (valid 01:00 - 01:59 AM):");
+      if (!code) return;
+      if (!isOneAmWindow()) {
+        alert("Unlock code is allowed only between 01:00 AM and 01:59 AM. Use Urgent Unlock with Admin ID instead.");
+        return;
       }
-      closeModal('qrScannerModal');
+      if (code.trim().toUpperCase() !== ONE_AM_UNLOCK_APP_CODE) {
+        alert("Invalid 1 AM Unlock Code.");
+        return;
+      }
+      db.ref("portal/hw_app_lock").set({
+        isLocked: false,
+        reason: "",
+        lockedBy: "AI ADMIN",
+        unlockedAt: Date.now()
+      });
+      appendAiLog("App UNLOCKED using 1 AM Unlock Code.");
     }
 
-    function processScannedQrText(rawText) {
-      const text = (rawText || '').trim().toUpperCase();
-      if (!text) return alert("Empty QR code!");
+    function unlockAppWith1AmCode() {
+      const input = document.getElementById("unlockCodeInput");
+      const err = document.getElementById("unlockErrorMsg");
+      const code = (input.value || "").trim().toUpperCase();
+      if (!isOneAmWindow()) {
+        err.textContent = "1 AM code works only between 01:00 AM and 01:59 AM. For urgent unlock, enter your Admin ID above.";
+        err.classList.remove("hidden");
+        return;
+      }
+      if (code !== ONE_AM_UNLOCK_APP_CODE) {
+        err.textContent = "Invalid 1 AM Unlock Code.";
+        err.classList.remove("hidden");
+        return;
+      }
+      err.classList.add("hidden");
+      input.value = "";
+      db.ref("portal/hw_app_lock").set({
+        isLocked: false,
+        reason: "",
+        lockedBy: "AI ADMIN",
+        unlockedAt: Date.now()
+      });
+      appendAiLog("App UNLOCKED via 1 AM code.");
+    }
 
-      if (currentScanPurpose === 'login') {
-        const empId = text.startsWith('EMP:') ? text.replace('EMP:', '') : text;
-        document.getElementById('empIdInput').value = empId;
-        closeQrScanner();
-        handleLogin();
-      } else if (currentScanPurpose === 'attendance') {
-        const expected = `HW_ATT_${getTodayDate()}`;
-        if (text === expected) {
-          closeQrScanner();
-          markStaffAttendance('Present', 'QR Verified');
-        } else {
-          alert(`Invalid or Expired Attendance QR! Expected today's QR (${expected}).`);
+    function renderAppLock() {
+      const overlay = document.getElementById("appLockOverlay");
+      const adminBadge = document.getElementById("adminAppLockBadge");
+      if (portalState.appLock.isLocked) {
+        document.getElementById("lockByDisplay").textContent = `Authority: ${portalState.appLock.lockedBy || "AI ADMIN"}`;
+        document.getElementById("lockReasonDisplay").textContent = portalState.appLock.reason || "System locked";
+        overlay.classList.remove("hidden");
+        if (adminBadge) {
+          adminBadge.textContent = `LOCKED (${portalState.appLock.reason})`;
+          adminBadge.className = "text-[11px] font-mono font-bold text-rose-400";
         }
-      } else if (currentScanPurpose === 'zoneCheck') {
-        if (text.startsWith('HW_ZONE_')) {
-          const zoneName = text.replace('HW_ZONE_', '').replace('_', ' ');
-          closeQrScanner();
-          const extra = getData('hw_extra_work', []);
-          extra.unshift({
-            empId: currentUser.id,
-            empName: currentUser.name,
-            title: `QR Zone Check-in: ${zoneName}`,
-            date: getTodayDate(),
-            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      } else {
+        overlay.classList.add("hidden");
+        if (adminBadge) {
+          adminBadge.textContent = "UNLOCKED";
+          adminBadge.className = "text-[11px] font-mono font-bold text-emerald-400";
+        }
+      }
+    }
+
+    // ================= GEOFENCE (10m ATTENDANCE / 5m DUTY SUBMIT) =================
+    function captureCurrentZoneGps() {
+      getDeviceGps()
+        .then((pos) => {
+          document.getElementById("zoneLatInput").value = pos.lat.toFixed(6);
+          document.getElementById("zoneLngInput").value = pos.lng.toFixed(6);
+          saveZoneGps();
+        })
+        .catch((err) => alert("GPS error: " + err.message));
+    }
+
+    function saveZoneGps() {
+      const lat = parseFloat(document.getElementById("zoneLatInput").value);
+      const lng = parseFloat(document.getElementById("zoneLngInput").value);
+      if (Number.isNaN(lat) || Number.isNaN(lng)) {
+        alert("Enter valid Latitude and Longitude.");
+        return;
+      }
+      db.ref("portal/hw_zone_gps").set({
+        lat,
+        lng,
+        label: "Kitchen / Work Zone"
+      });
+      appendAiLog(`Zone GPS set to (${lat.toFixed(6)}, ${lng.toFixed(6)}) — 10m Attendance / 5m Duty Submit.`);
+    }
+
+    function renderZoneGps() {
+      const z = portalState.zoneGps;
+      const statusEl = document.getElementById("zoneGpsStatus");
+      const staffNote = document.getElementById("staffZoneNote");
+      if (typeof z.lat === "number" && typeof z.lng === "number") {
+        if (document.activeElement !== document.getElementById("zoneLatInput")) {
+          document.getElementById("zoneLatInput").value = z.lat;
+        }
+        if (document.activeElement !== document.getElementById("zoneLngInput")) {
+          document.getElementById("zoneLngInput").value = z.lng;
+        }
+        if (statusEl) statusEl.textContent = `Zone: ${z.lat.toFixed(6)}, ${z.lng.toFixed(6)} | Attendance ≤ ${ATTENDANCE_RADIUS_METERS}m | Duty Submit ≤ ${DUTY_SUBMIT_RADIUS_METERS}m`;
+        if (staffNote) staffNote.textContent = `Attendance ≤ ${ATTENDANCE_RADIUS_METERS}m • Duty Submit ≤ ${DUTY_SUBMIT_RADIUS_METERS}m`;
+      } else {
+        if (statusEl) statusEl.textContent = "Zone GPS not set yet.";
+        if (staffNote) staffNote.textContent = "Waiting for AI Admin zone GPS setup.";
+      }
+    }
+
+    // ================= AUTONOMOUS AI ADMIN ENGINE =================
+    function saveGeminiKey() {
+      const key = (document.getElementById("geminiApiKeyInput").value || "").trim();
+      if (!key) return;
+      db.ref("portal/hw_ai_config/apiKey").set(key);
+      appendAiLog("Updated Gemini API key for AI Admin.");
+    }
+
+    function toggleAiAutonomous() {
+      const next = !portalState.aiConfig.autonomous;
+      db.ref("portal/hw_ai_config/autonomous").set(next);
+      appendAiLog(`AI Autonomous mode turned ${next ? "ON" : "OFF"}.`);
+    }
+
+    function runAiAutonomousEngine(manual = false) {
+      if (!portalState.aiConfig.autonomous && !manual) return;
+      const leaves = portalState.leaveRequests || {};
+      const today = getTodayKey();
+      let count = 0;
+
+      Object.entries(leaves).forEach(([reqId, req]) => {
+        if (!req || req.status !== "Pending") return;
+        const rText = (req.reason || "").trim().toLowerCase();
+        const approved = rText.length >= 3 && !rText.includes("fake") && !rText.includes("test");
+        const status = approved ? "Approved" : "Rejected";
+        db.ref(`portal/hw_leave_requests/${reqId}/status`).set(status);
+        if (approved) {
+          db.ref(`portal/hw_attendance/${today}/${req.empId}`).set({
+            status: req.type === "Half-Day" ? "Half-Day" : "Leave",
+            time: new Date().toLocaleTimeString(),
+            by: "AI_ADMIN"
           });
-          saveData('hw_extra_work', extra);
-          renderStaffDashboard();
-          alert(`Verified! ${zoneName} QR checkpoint scanned (+15 Pts).`);
-        } else {
-          alert("Please scan a valid Room / Zone QR Code!");
         }
-      } else if (currentScanPurpose === 'adminInspect') {
-        const empId = text.startsWith('EMP:') ? text.replace('EMP:', '') : text;
-        closeQrScanner();
-        switchMainTab('search');
-        document.getElementById('adminSearchQuery').value = empId;
-        searchEmployeeDetail();
+        count++;
+        appendAiLog(`AI ${status} ${req.type} for ${req.empName || req.empId}.`);
+      });
+
+      if (manual && count === 0) {
+        appendAiLog("AI cycle checked: no pending leaves.");
+      }
+    }
+
+    async function askGeminiAdminModel(promptText) {
+      const apiKey = portalState.aiConfig.apiKey || DEFAULT_GEMINI_API_KEY;
+      if (!apiKey) return null;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`;
+      const body = {
+        contents: [{
+          parts: [{
+            text: `You are the autonomous AI Admin of a household work management app. Respond in one short line with action taken for: ${promptText}`
+          }]
+        }]
+      };
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const parts = data && data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts;
+      return (parts && parts[0] && parts[0].text) ? parts[0].text.trim() : null;
+    }
+
+    async function runAiDirective() {
+      const input = document.getElementById("aiPromptInput");
+      const cmd = (input.value || "").trim();
+      if (!cmd) return;
+      input.value = "";
+      const lower = cmd.toLowerCase();
+
+      if (lower.includes("lock") || lower.includes("band") || lower.includes("stop")) {
+        document.getElementById("lockReasonInput").value = cmd;
+        lockAppNow("AI ADMIN");
+        return;
+      }
+      if (lower.includes("unlock")) {
+        promptUnlockWith1Am();
+        return;
+      }
+      if (lower.includes("leave") || lower.includes("approve")) {
+        runAiAutonomousEngine(true);
+        return;
+      }
+      if (lower.includes("notice")) {
+        const noticeText = cmd.replace(/notice/gi, "").trim() || cmd;
+        db.ref("portal/hw_announcement").set({ text: noticeText, updatedAt: Date.now() });
+        appendAiLog(`AI posted notice: "${noticeText}"`);
+        return;
+      }
+
+      const staffList = Object.values(portalState.employees || {}).filter((e) => !e.isAdmin);
+      if (staffList.length > 0) {
+        const target = staffList[0];
+        const taskId = "AI_DUTY_" + Date.now();
+        db.ref(`portal/hw_tasks/${taskId}`).set({
+          id: taskId,
+          empId: target.id,
+          empName: target.name,
+          title: cmd,
+          deadline: "21:00",
+          priority: "High",
+          points: 20,
+          status: "Pending",
+          assignedBy: "AI_ADMIN"
+        });
+        appendAiLog(`AI assigned duty "${cmd}" to ${target.name} (${target.id}).`);
+      }
+
+      try {
+        const aiReply = await askGeminiAdminModel(cmd);
+        if (aiReply) appendAiLog(`Gemini AI: ${aiReply}`);
+      } catch (e) {
+        appendAiLog(`AI local execution done (${e.message}).`);
+      }
+    }
+
+    function renderAiControls() {
+      const badge = document.getElementById("aiModeBadge");
+      const keyInput = document.getElementById("geminiApiKeyInput");
+      const logEl = document.getElementById("aiActivityLog");
+      if (badge) {
+        if (portalState.aiConfig.autonomous) {
+          badge.textContent = "AI Auto: ON";
+          badge.className = "px-3 py-1 rounded-full text-[10px] font-black uppercase bg-emerald-500/20 text-emerald-400";
+        } else {
+          badge.textContent = "AI Auto: OFF";
+          badge.className = "px-3 py-1 rounded-full text-[10px] font-black uppercase bg-amber-500/20 text-amber-400";
+        }
+      }
+      if (keyInput && document.activeElement !== keyInput && portalState.aiConfig.apiKey) {
+        keyInput.value = portalState.aiConfig.apiKey;
+      }
+      if (logEl) {
+        const logs = portalState.aiConfig.logs || [];
+        logEl.innerHTML = logs.length
+          ? logs.map((l) => `<div class="p-2 rounded-xl bg-slate-900 border border-slate-800/80">${l}</div>`).join("")
+          : `<div class="text-slate-500">No AI logs yet.</div>`;
+      }
+    }
+
+    // ================= LOGIN (EMPLOYEE ID ONLY), SINGLE-DEVICE SESSION & 1 AM AI ADMIN =================
+    function completeLoginWithId(empId) {
+      const cleanId = (empId || "").trim().toUpperCase();
+      const errEl = document.getElementById("loginError");
+      errEl.classList.add("hidden");
+
+      if (!cleanId) {
+        errEl.textContent = "Please enter an Employee ID.";
+        errEl.classList.remove("hidden");
+        return;
+      }
+
+      const emp = portalState.employees[cleanId];
+      if (!emp) {
+        errEl.textContent = `Account "${cleanId}" does not exist.`;
+        errEl.classList.remove("hidden");
+        return;
+      }
+
+      if (emp.bannedUntil && emp.bannedUntil > Date.now()) {
+        showBanScreen(emp);
+        return;
+      }
+
+      const sessionId = "SES-" + Date.now() + "-" + Math.random().toString(36).substring(2, 7).toUpperCase();
+      currentSessionId = sessionId;
+      currentUser = emp;
+      localStorage.setItem("hw_session_data", JSON.stringify({ empId: emp.id, sessionId }));
+
+      db.ref(`portal/hw_sessions/${emp.id}`).set({
+        sessionId,
+        deviceId: localDeviceId,
+        updatedAt: Date.now()
+      });
+
+      enterDashboard(emp);
+    }
+
+    function handleLogin(scannedId = null) {
+      if (scannedId) {
+        completeLoginWithId(scannedId);
+        return;
+      }
+      const raw = document.getElementById("empIdInput").value;
+      const cleanId = (raw || "").trim().toUpperCase();
+      const errEl = document.getElementById("loginError");
+
+      if (portalState.employees[cleanId]) {
+        completeLoginWithId(cleanId);
+        return;
+      }
+
+      db.ref(`portal/hw_employees/${cleanId}`).once("value", (snap) => {
+        if (snap.exists()) {
+          portalState.employees[cleanId] = snap.val();
+          completeLoginWithId(cleanId);
+        } else {
+          errEl.textContent = `Account "${cleanId}" does not exist.`;
+          errEl.classList.remove("hidden");
+        }
+      }, () => {
+        completeLoginWithId(cleanId);
+      });
+    }
+
+    function createAdminWith1AmCode() {
+      const code = (document.getElementById("adminCreateCodeInput").value || "").trim().toUpperCase();
+      const adminId = (document.getElementById("newAdminIdInput").value || "").trim().toUpperCase();
+      const adminName = (document.getElementById("newAdminNameInput").value || "").trim() || "AI Admin";
+      const errEl = document.getElementById("createAdminError");
+      errEl.classList.add("hidden");
+
+      if (!isOneAmWindow()) {
+        errEl.textContent = "AI Admin account creation is allowed only between 01:00 AM and 01:59 AM.";
+        errEl.classList.remove("hidden");
+        return;
+      }
+      if (code !== ONE_AM_CREATE_ADMIN_CODE) {
+        errEl.textContent = "Invalid 1 AM Admin Code.";
+        errEl.classList.remove("hidden");
+        return;
+      }
+      if (!adminId) {
+        errEl.textContent = "Enter an Admin ID.";
+        errEl.classList.remove("hidden");
+        return;
+      }
+
+      db.ref(`portal/hw_employees/${adminId}`).set({
+        id: adminId,
+        name: adminName,
+        role: "AI Admin",
+        isAdmin: true,
+        points: 0,
+        bannedUntil: 0,
+        banReason: ""
+      });
+
+      appendAiLog(`AI Admin created at 1 AM window: ${adminName} (${adminId}).`);
+      closeModal("createAdminModal");
+      document.getElementById("adminCreateCodeInput").value = "";
+      document.getElementById("newAdminIdInput").value = "";
+      document.getElementById("newAdminNameInput").value = "";
+      alert(`AI Admin account ${adminId} created.`);
+    }
+
+    function showBanScreen(emp) {
+      document.getElementById("loginSection").classList.add("hidden");
+      document.getElementById("dashboardSection").classList.add("hidden");
+      document.getElementById("banSection").classList.remove("hidden");
+      document.getElementById("banReasonDisplay").textContent = emp.banReason || "Policy violation";
+      const hrs = Math.max(1, Math.ceil((emp.bannedUntil - Date.now()) / (1000 * 60 * 60)));
+      document.getElementById("banTimeDisplay").textContent = `${hrs} hour(s) remaining`;
+    }
+
+    function goBackToLogin() {
+      document.getElementById("dashboardSection").classList.add("hidden");
+      document.getElementById("banSection").classList.add("hidden");
+      document.getElementById("loginSection").classList.remove("hidden");
+    }
+
+    function handleLogout() {
+      if (currentUser) {
+        db.ref(`portal/hw_sessions/${currentUser.id}`).remove();
+      }
+      currentUser = null;
+      currentSessionId = null;
+      localStorage.removeItem("hw_session_data");
+      goBackToLogin();
+    }
+
+    function enterDashboard(emp) {
+      document.getElementById("loginSection").classList.add("hidden");
+      document.getElementById("banSection").classList.add("hidden");
+      document.getElementById("dashboardSection").classList.remove("hidden");
+
+      document.getElementById("userNameDisplay").textContent = emp.name;
+      document.getElementById("userHeaderAvatar").textContent = (emp.name || "U").charAt(0).toUpperCase();
+      const badge = document.getElementById("userRoleBadge");
+
+      if (emp.isAdmin) {
+        badge.textContent = "AI Admin";
+        document.getElementById("adminNavButtons").classList.remove("hidden");
+        document.getElementById("staffNavButtons").classList.add("hidden");
+        document.getElementById("adminPanel").classList.remove("hidden");
+        document.getElementById("staffPanel").classList.add("hidden");
+        if (!document.getElementById("adminAttDateInput").value) {
+          document.getElementById("adminAttDateInput").value = getTodayKey();
+        }
+        switchMainTab("overview");
+      } else {
+        badge.textContent = emp.role || "Staff";
+        document.getElementById("adminNavButtons").classList.add("hidden");
+        document.getElementById("staffNavButtons").classList.remove("hidden");
+        document.getElementById("adminPanel").classList.add("hidden");
+        document.getElementById("staffPanel").classList.remove("hidden");
+        switchMainTab("attendance");
+      }
+
+      renderAllViews();
+    }
+
+    function switchMainTab(tabKey) {
+      document.querySelectorAll(".tab-panel").forEach((el) => el.classList.add("hidden"));
+      document.querySelectorAll("#verticalNavGroup button").forEach((btn) => btn.classList.remove("active-tab"));
+
+      const panel = document.getElementById("section-" + tabKey);
+      if (panel) panel.classList.remove("hidden");
+      const btn = document.getElementById("navBtn-" + tabKey);
+      if (btn) btn.classList.add("active-tab");
+
+      if (tabKey === "qrHub") {
+        renderAdminQrHub();
+      } else if (tabKey === "staffIdCard" && currentUser) {
+        renderStaffIdCard();
+      }
+    }
+
+    // ================= RENDERING =================
+    function renderAnnouncement() {
+      const banner = document.getElementById("announcementBanner");
+      const textEl = document.getElementById("announcementText");
+      if (portalState.announcement && portalState.announcement.text) {
+        textEl.textContent = portalState.announcement.text;
+        banner.classList.remove("hidden");
+      } else {
+        banner.classList.add("hidden");
+      }
+    }
+
+    function renderAllViews() {
+      renderAnnouncement();
+      renderAiControls();
+      renderAppLock();
+      renderZoneGps();
+      if (!currentUser) return;
+      if (currentUser.isAdmin) {
+        renderAdminDashboard();
+      } else {
+        renderStaffDashboard();
+      }
+    }
+
+    function renderAdminDashboard() {
+      const emps = Object.values(portalState.employees || {});
+      const staffOnly = emps.filter((e) => !e.isAdmin);
+      const dateKey = document.getElementById("adminAttDateInput").value || getTodayKey();
+      const dayAtt = (portalState.attendance && portalState.attendance[dateKey]) || {};
+
+      let presentCount = 0;
+      let leaveCount = 0;
+      staffOnly.forEach((s) => {
+        const rec = dayAtt[s.id];
+        if (!rec) return;
+        if (rec.status === "Present" || rec.status === "Half-Day") presentCount++;
+        if (rec.status === "Leave") leaveCount++;
+      });
+
+      const pendingLeaves = Object.values(portalState.leaveRequests || {}).filter((r) => r.status === "Pending");
+      const pendingAcc = Object.values(portalState.accountRequests || {}).filter((r) => r.status === "Pending");
+
+      document.getElementById("statTotalEmp").textContent = staffOnly.length;
+      document.getElementById("statPresent").textContent = presentCount;
+      document.getElementById("statLeave").textContent = leaveCount;
+      document.getElementById("statReqCount").textContent = pendingLeaves.length + pendingAcc.length;
+
+      // SOS Alerts
+      const sosItems = Object.entries(portalState.sosAlerts || {});
+      const sosBox = document.getElementById("adminSosContainer");
+      const sosList = document.getElementById("adminSosList");
+      if (sosItems.length > 0) {
+        sosBox.classList.remove("hidden");
+        sosList.innerHTML = sosItems.map(([, s]) => `
+          <div class="p-3 rounded-2xl bg-rose-950/50 border border-rose-500/30 flex justify-between items-center text-xs">
+            <span class="font-bold text-rose-200">${s.empName} (${s.empId}) — Urgent Help!</span>
+            <span class="font-mono text-[10px] text-rose-400">${s.time || ""}</span>
+          </div>
+        `).join("");
+      } else {
+        sosBox.classList.add("hidden");
+      }
+
+      // Leaderboard
+      const sorted = [...staffOnly].sort((a, b) => getSafePoints(b) - getSafePoints(a));
+      document.getElementById("adminLeaderboardList").innerHTML = sorted.length
+        ? sorted.map((s, i) => `
+          <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex justify-between items-center text-xs">
+            <span class="font-black text-white">#${i + 1} ${s.name} <span class="text-slate-400 font-mono">(${s.id})</span></span>
+            <span class="px-3 py-1 rounded-full bg-amber-500/20 text-amber-400 font-black">${getSafePoints(s)} pts</span>
+          </div>
+        `).join("")
+        : `<p class="text-xs text-slate-500">No staff records.</p>`;
+
+      // Tasks Monitor
+      const tasks = Object.values(portalState.tasks || {});
+      document.getElementById("adminTasksList").innerHTML = tasks.length
+        ? tasks.map((t) => `
+          <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+            <div class="space-y-1">
+              <p class="font-black text-white">${t.title} <span class="text-[10px] px-2 py-0.5 rounded-full ${t.status === "Completed" ? "bg-emerald-500/20 text-emerald-400" : "bg-amber-500/20 text-amber-400"}">${t.status}</span></p>
+              <p class="text-slate-400">Assigned: <strong class="text-slate-200">${t.empName} (${t.empId})</strong> • Deadline: ${t.deadline || "-"} • ${Number(t.points) || 0} pts</p>
+            </div>
+            ${t.proofPhoto ? `<img src="${t.proofPhoto}" alt="Proof" class="w-16 h-16 object-cover rounded-xl border border-slate-700">` : ""}
+          </div>
+        `).join("")
+        : `<p class="text-xs text-slate-500">No duties yet.</p>`;
+
+      // Dropdowns
+      const assignSel = document.getElementById("assignEmpSelect");
+      const qrEmpSel = document.getElementById("qrEmpSelect");
+      if (assignSel) {
+        assignSel.innerHTML = staffOnly.map((s) => `<option value="${s.id}">${s.name} (${s.id})</option>`).join("");
+      }
+      if (qrEmpSel) {
+        const prev = qrEmpSel.value;
+        qrEmpSel.innerHTML = staffOnly.map((s) => `<option value="${s.id}">${s.name} (${s.id})</option>`).join("");
+        if (prev) qrEmpSel.value = prev;
+      }
+
+      // Account Requests
+      const accReqs = Object.entries(portalState.accountRequests || {}).filter(([, r]) => r.status === "Pending");
+      document.getElementById("accountRequestsList").innerHTML = accReqs.length
+        ? accReqs.map(([id, r]) => `
+          <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex flex-wrap justify-between items-center gap-2 text-xs">
+            <div>
+              <p class="font-black text-white">${r.name} <span class="font-mono text-cyan-400">(${r.empId})</span></p>
+              <p class="text-slate-400">Role: ${r.role || "Staff"}</p>
+            </div>
+            <div class="flex gap-2">
+              <button type="button" onclick="approveAccountReq('${id}')" class="liquid-btn glow-emerald px-3 py-1.5 rounded-xl text-[11px] font-black text-emerald-400">Approve</button>
+              <button type="button" onclick="rejectAccountReq('${id}')" class="liquid-btn glow-rose px-3 py-1.5 rounded-xl text-[11px] font-black text-rose-400">Reject</button>
+            </div>
+          </div>
+        `).join("")
+        : `<p class="text-xs text-slate-500">No pending account requests.</p>`;
+
+      // Leave Requests
+      const leaveReqs = Object.entries(portalState.leaveRequests || {}).filter(([, r]) => r.status === "Pending");
+      document.getElementById("leaveRequestsTableBody").innerHTML = leaveReqs.length
+        ? leaveReqs.map(([id, r]) => `
+          <tr>
+            <td class="p-3 font-bold text-white">${r.empName || r.empId}</td>
+            <td class="p-3 font-mono text-[11px] text-slate-400">${r.date || ""} ${r.time || ""}</td>
+            <td class="p-3 font-bold text-amber-400">${r.type}</td>
+            <td class="p-3 text-slate-300">${r.reason}</td>
+            <td class="p-3 text-right space-x-2">
+              <button type="button" onclick="decideLeaveReq('${id}', 'Approved')" class="liquid-btn glow-emerald px-3 py-1 rounded-lg text-[11px] font-black text-emerald-400">Approve</button>
+              <button type="button" onclick="decideLeaveReq('${id}', 'Rejected')" class="liquid-btn glow-rose px-3 py-1 rounded-lg text-[11px] font-black text-rose-400">Reject</button>
+            </td>
+          </tr>
+        `).join("")
+        : `<tr><td colspan="5" class="p-3 text-slate-500 text-center">No pending leaves.</td></tr>`;
+
+      // Directory Table (Points Fix, Ban/Unban & Delete Account)
+      document.getElementById("empTableBody").innerHTML = staffOnly.map((s) => {
+        const st = (dayAtt[s.id] && dayAtt[s.id].status) || "-";
+        const isBanned = s.bannedUntil && s.bannedUntil > Date.now();
+        const pts = getSafePoints(s);
+        return `
+          <tr>
+            <td class="p-3 font-mono font-bold text-cyan-400">${s.id}</td>
+            <td class="p-3 font-bold text-white">${s.name} ${isBanned ? '<span class="text-[10px] px-2 py-0.5 rounded bg-rose-500/20 text-rose-400 ml-1">BANNED</span>' : ""}</td>
+            <td class="p-3">
+              <button type="button" onclick="openAdjustPointsModal('${s.id}')" class="liquid-btn px-2.5 py-1 rounded-lg text-[11px] font-black text-amber-400" title="Click to fix/edit points">
+                ${pts} pts <i class="fa-solid fa-pen ml-1 text-[9px]"></i>
+              </button>
+            </td>
+            <td class="p-3 font-bold text-slate-300">${st}</td>
+            <td class="p-3 space-x-1">
+              <button type="button" onclick="setManualAtt('${s.id}', 'Present')" class="liquid-btn px-2.5 py-1 rounded-lg text-[11px] font-black text-emerald-400">P</button>
+              <button type="button" onclick="setManualAtt('${s.id}', 'Absent')" class="liquid-btn px-2.5 py-1 rounded-lg text-[11px] font-black text-rose-400">A</button>
+              <button type="button" onclick="setManualAtt('${s.id}', 'Leave')" class="liquid-btn px-2.5 py-1 rounded-lg text-[11px] font-black text-amber-400">L</button>
+            </td>
+            <td class="p-3 text-right space-x-1.5 whitespace-nowrap">
+              ${isBanned
+                ? `<button type="button" onclick="unbanStaff('${s.id}')" class="liquid-btn glow-emerald px-2.5 py-1 rounded-lg text-[11px] font-black text-emerald-400">Unban</button>`
+                : `<button type="button" onclick="openBanStaffModal('${s.id}')" class="liquid-btn glow-amber px-2.5 py-1 rounded-lg text-[11px] font-black text-amber-400">Ban</button>`
+              }
+              <button type="button" onclick="deleteStaffAccount('${s.id}')" class="liquid-btn glow-rose px-2.5 py-1 rounded-lg text-[11px] font-black text-rose-400">
+                <i class="fa-solid fa-trash mr-1"></i>Delete
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join("");
+
+      // Duty Transfer
+      const activeTasks = tasks.filter((t) => t.status !== "Completed");
+      document.getElementById("dutyTransferList").innerHTML = activeTasks.length
+        ? activeTasks.map((t) => {
+          const candidates = staffOnly.filter((s) => s.id !== t.empId);
+          return `
+            <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex flex-wrap justify-between items-center gap-3 text-xs">
+              <div>
+                <p class="font-black text-white">${t.title}</p>
+                <p class="text-slate-400">Current: <span class="text-amber-400 font-bold">${t.empName} (${t.empId})</span></p>
+              </div>
+              <div class="flex items-center gap-2">
+                <select id="transferSelect-${t.id}" class="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-bold text-white">
+                  ${candidates.map((c) => `<option value="${c.id}">${c.name} (${c.id})</option>`).join("")}
+                </select>
+                <button type="button" onclick="transferDuty('${t.id}')" class="liquid-btn glow-amber px-3 py-1.5 rounded-xl text-[11px] font-black text-amber-300">Transfer</button>
+              </div>
+            </div>
+          `;
+        }).join("")
+        : `<p class="text-xs text-slate-500">No active duties to transfer.</p>`;
+    }
+
+    function renderStaffDashboard() {
+      const today = getTodayKey();
+      const rec = (portalState.attendance && portalState.attendance[today] && portalState.attendance[today][currentUser.id]) || null;
+      const badge = document.getElementById("attBadge");
+      const timeEl = document.getElementById("attTimeText");
+
+      if (rec) {
+        badge.textContent = rec.status;
+        badge.className = "px-3 py-1 rounded-full text-xs font-black bg-emerald-500/20 text-emerald-400";
+        timeEl.textContent = rec.time || "";
+      } else {
+        badge.textContent = "Not Marked";
+        badge.className = "px-3 py-1 rounded-full text-xs font-black bg-slate-800 text-slate-300";
+        timeEl.textContent = "";
+      }
+
+      const hist = [];
+      Object.entries(portalState.attendance || {}).sort((a, b) => b[0].localeCompare(a[0])).slice(0, 7).forEach(([dKey, map]) => {
+        if (map && map[currentUser.id]) {
+          hist.push(`<div class="p-2.5 rounded-xl bg-slate-900 border border-slate-800 flex justify-between"><span class="font-mono text-slate-300">${dKey}</span><span class="font-black text-emerald-400">${map[currentUser.id].status}</span></div>`);
+        }
+      });
+      document.getElementById("staffAttHistoryList").innerHTML = hist.length ? hist.join("") : `<p class="text-slate-500">No attendance history yet.</p>`;
+
+      const myTasks = Object.values(portalState.tasks || {}).filter((t) => t.empId === currentUser.id);
+      document.getElementById("staffTasksList").innerHTML = myTasks.length
+        ? myTasks.map((t) => `
+          <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+            <div>
+              <p class="font-black text-white">${t.title} <span class="text-amber-400">+${Number(t.points) || 0} pts</span></p>
+              <p class="text-slate-400">Deadline: ${t.deadline || "-"} • Priority: ${t.priority || "Normal"} • Status: <strong class="${t.status === "Completed" ? "text-emerald-400" : "text-amber-400"}">${t.status}</strong></p>
+            </div>
+            ${t.status !== "Completed"
+              ? `<button type="button" onclick="openProofModal('${t.id}')" class="liquid-btn glow-emerald px-4 py-2 rounded-xl text-xs font-black text-emerald-400">Submit Proof (5m)</button>`
+              : `<span class="text-emerald-400 font-black"><i class="fa-solid fa-circle-check mr-1"></i>Done</span>`
+            }
+          </div>
+        `).join("")
+        : `<p class="text-xs text-slate-500">No duties assigned yet.</p>`;
+
+      if (!document.getElementById("section-staffIdCard").classList.contains("hidden")) {
+        document.getElementById("staffCardPoints").textContent = `${getSafePoints(currentUser)} Points`;
+      }
+    }
+
+    // ================= ACTIONS =================
+    function assignTask() {
+      const empId = document.getElementById("assignEmpSelect").value;
+      const title = document.getElementById("taskTitleInput").value.trim();
+      const deadline = document.getElementById("taskTimeInput").value;
+      const priority = document.getElementById("taskPrioritySelect").value;
+      const points = parseInt(document.getElementById("taskPointsInput").value, 10) || 20;
+      const emp = portalState.employees[empId];
+      if (!emp || !title) {
+        alert("Select employee and enter task title.");
+        return;
+      }
+      const taskId = "TASK_" + Date.now();
+      db.ref(`portal/hw_tasks/${taskId}`).set({
+        id: taskId,
+        empId: emp.id,
+        empName: emp.name,
+        title,
+        deadline,
+        priority,
+        points,
+        status: "Pending"
+      });
+      document.getElementById("taskTitleInput").value = "";
+    }
+
+    function postAnnouncement() {
+      const text = document.getElementById("announcementInput").value.trim();
+      if (!text) return;
+      db.ref("portal/hw_announcement").set({ text, updatedAt: Date.now() });
+      document.getElementById("announcementInput").value = "";
+    }
+
+    function clearAnnouncement() {
+      db.ref("portal/hw_announcement").remove();
+    }
+
+    function setManualAtt(empId, status) {
+      const dateKey = document.getElementById("adminAttDateInput").value || getTodayKey();
+      db.ref(`portal/hw_attendance/${dateKey}/${empId}`).set({
+        status,
+        time: new Date().toLocaleTimeString(),
+        by: "ADMIN"
+      });
+    }
+
+    function addNewEmployee() {
+      const id = document.getElementById("newEmpId").value.trim().toUpperCase();
+      const name = document.getElementById("newEmpName").value.trim();
+      const role = document.getElementById("newEmpRole").value.trim() || "Staff";
+      if (!id || !name) {
+        alert("Enter ID and Name.");
+        return;
+      }
+      db.ref(`portal/hw_employees/${id}`).set({
+        id,
+        name,
+        role,
+        isAdmin: false,
+        points: 0,
+        bannedUntil: 0,
+        banReason: ""
+      });
+      closeModal("addEmpModal");
+      document.getElementById("newEmpId").value = "";
+      document.getElementById("newEmpName").value = "";
+      document.getElementById("newEmpRole").value = "";
+    }
+
+    function openAdjustPointsModal(empId) {
+      const emp = portalState.employees[empId];
+      if (!emp) return;
+      pointsTargetId = empId;
+      document.getElementById("pointsTargetLabel").textContent = `Staff: ${emp.name} (${emp.id}) — Current: ${getSafePoints(emp)} pts`;
+      document.getElementById("pointsExactInput").value = getSafePoints(emp);
+      openModal("adjustPointsModal");
+    }
+
+    function saveAdjustedPoints() {
+      if (!pointsTargetId) return;
+      const val = parseInt(document.getElementById("pointsExactInput").value, 10);
+      if (Number.isNaN(val) || val < 0) {
+        alert("Enter valid points (0 or more).");
+        return;
+      }
+      db.ref(`portal/hw_employees/${pointsTargetId}/points`).set(val);
+      appendAiLog(`Points updated for ${pointsTargetId} to ${val} pts.`);
+      closeModal("adjustPointsModal");
+      pointsTargetId = null;
+    }
+
+    function deleteStaffAccount(empId) {
+      const emp = portalState.employees[empId];
+      if (!emp) return;
+      const ok = confirm(`Permanently delete account "${emp.name}" (${emp.id})?`);
+      if (!ok) return;
+      db.ref(`portal/hw_employees/${empId}`).remove();
+      db.ref(`portal/hw_sessions/${empId}`).remove();
+      appendAiLog(`Deleted account: ${emp.name} (${empId}).`);
+    }
+
+    function openBanStaffModal(empId) {
+      const emp = portalState.employees[empId];
+      if (!emp) return;
+      banTargetId = empId;
+      document.getElementById("banTargetLabel").textContent = `Staff: ${emp.name} (${emp.id})`;
+      openModal("banModal");
+    }
+
+    function confirmBanUser() {
+      if (!banTargetId) return;
+      const reason = document.getElementById("banReasonInput").value.trim() || "Suspended";
+      const hrs = Math.max(1, parseInt(document.getElementById("banHoursInput").value, 10) || 24);
+      const bannedUntil = Date.now() + hrs * 60 * 60 * 1000;
+      db.ref(`portal/hw_employees/${banTargetId}`).update({ bannedUntil, banReason: reason });
+      db.ref(`portal/hw_sessions/${banTargetId}`).remove();
+      closeModal("banModal");
+      document.getElementById("banReasonInput").value = "";
+      banTargetId = null;
+    }
+
+    function unbanStaff(empId) {
+      db.ref(`portal/hw_employees/${empId}`).update({ bannedUntil: 0, banReason: "" });
+    }
+
+    function transferDuty(taskId) {
+      const sel = document.getElementById("transferSelect-" + taskId);
+      const nextId = sel && sel.value;
+      const task = portalState.tasks[taskId];
+      const nextEmp = portalState.employees[nextId];
+      if (!task || !nextEmp) return;
+      db.ref(`portal/hw_tasks/${taskId}`).update({
+        empId: nextEmp.id,
+        empName: nextEmp.name
+      });
+      appendAiLog(`Duty "${task.title}" transferred to ${nextEmp.name} (${nextEmp.id}).`);
+    }
+
+    function decideLeaveReq(reqId, decision) {
+      const req = portalState.leaveRequests[reqId];
+      if (!req) return;
+      db.ref(`portal/hw_leave_requests/${reqId}/status`).set(decision);
+      if (decision === "Approved") {
+        const dKey = req.date || getTodayKey();
+        db.ref(`portal/hw_attendance/${dKey}/${req.empId}`).set({
+          status: req.type === "Half-Day" ? "Half-Day" : "Leave",
+          time: new Date().toLocaleTimeString(),
+          by: "ADMIN"
+        });
       }
     }
 
     function openUserRequestModal() {
-      document.getElementById('reqAutoGeneratedId').value = generateNextEmployeeId();
-      document.getElementById('reqFullName').value = '';
-      document.getElementById('reqDetailsInput').value = '';
-      currentReqPhotoBase64 = '';
-      document.getElementById('reqPhotoPreview').innerHTML = '?';
-      openModal('userReqModal');
+      openModal("userRequestModal");
     }
 
-    async function handleFileSelect(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-      currentReqPhotoBase64 = await compressImageFile(file, 400, 0.72);
-      document.getElementById('reqPhotoPreview').innerHTML = `<img src="${currentReqPhotoBase64}" class="w-full h-full object-cover">`;
-    }
-
-    function submitUserRequest() {
-      const reqId = document.getElementById('reqAutoGeneratedId').value.trim();
-      const name = document.getElementById('reqFullName').value.trim();
-      const details = document.getElementById('reqDetailsInput').value.trim();
-
-      if (!name) return alert("Please enter Full Name!");
-
-      const reqs = getData('hw_account_requests', []);
-      reqs.unshift({
-        id: 'REQ_' + Date.now(),
-        empId: reqId,
-        name: name,
-        details: details || 'New Staff Account',
-        photo: currentReqPhotoBase64,
-        date: getTodayDate()
+    function submitAccountRequest() {
+      const name = document.getElementById("reqEmpName").value.trim();
+      const empId = document.getElementById("reqEmpId").value.trim().toUpperCase();
+      const role = document.getElementById("reqEmpRole").value.trim() || "Staff";
+      if (!name || !empId) {
+        alert("Enter Name and ID.");
+        return;
+      }
+      const reqId = "REQ_" + Date.now();
+      db.ref(`portal/hw_account_requests/${reqId}`).set({
+        id: reqId,
+        name,
+        empId,
+        role,
+        status: "Pending"
       });
-      saveData('hw_account_requests', reqs);
-      closeModal('userReqModal');
-      alert(`Request submitted! Your proposed ID is ${reqId}. Wait for Admin approval.`);
+      closeModal("userRequestModal");
+      alert("Request submitted.");
     }
 
-    function approveAccountRequest(reqId) {
-      let reqs = getData('hw_account_requests', []);
-      const req = reqs.find(r => r.id === reqId);
+    function approveAccountReq(reqId) {
+      const req = portalState.accountRequests[reqId];
       if (!req) return;
-
-      const emps = getData('hw_employees', defaultEmployees);
-      if (!emps.some(e => e.id === req.empId)) {
-        emps.push({
-          id: req.empId,
-          name: req.name,
-          role: 'staff',
-          status: 'active',
-          photo: req.photo || '',
-          banUntil: null,
-          banReason: ''
-        });
-        saveData('hw_employees', emps);
-      }
-
-      reqs = reqs.filter(r => r.id !== reqId);
-      saveData('hw_account_requests', reqs);
-      renderAdminDashboard();
-      alert(`Approved! ${req.name} (${req.empId}) added to staff.`);
-    }
-
-    function rejectAccountRequest(reqId) {
-      let reqs = getData('hw_account_requests', []);
-      reqs = reqs.filter(r => r.id !== reqId);
-      saveData('hw_account_requests', reqs);
-      renderAdminDashboard();
-    }
-
-    function postAnnouncement() {
-      const text = document.getElementById('announcementInput').value.trim();
-      if (!text) return alert("Write a notice first!");
-      saveData('hw_announcement', text);
-      document.getElementById('announcementInput').value = '';
-      renderAnnouncement();
-      alert("Notice broadcasted to everyone!");
-    }
-
-    function clearAnnouncement() {
-      saveData('hw_announcement', '');
-      renderAnnouncement();
-    }
-
-    function renderAnnouncement() {
-      const text = getData('hw_announcement', '');
-      const banner = document.getElementById('announcementBanner');
-      if (text) {
-        document.getElementById('announcementText').innerText = text;
-        banner.classList.remove('hidden');
-      } else {
-        banner.classList.add('hidden');
-      }
-    }
-
-    function sendUrgentSosAlert() {
-      const msg = prompt("Describe your urgent issue / help needed:");
-      if (!msg) return;
-      const alerts = getData('hw_sos_alerts', []);
-      alerts.unshift({
-        empId: currentUser.id,
-        empName: currentUser.name,
-        message: msg,
-        time: `${getTodayDate()} • ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+      const existing = portalState.employees[req.empId] || {};
+      db.ref(`portal/hw_employees/${req.empId}`).set({
+        id: req.empId,
+        name: req.name,
+        role: req.role || existing.role || "Staff",
+        isAdmin: Boolean(existing.isAdmin),
+        points: getSafePoints(existing),
+        bannedUntil: existing.bannedUntil || 0,
+        banReason: existing.banReason || ""
       });
-      saveData('hw_sos_alerts', alerts);
-      alert("Urgent Help / SOS alert sent to Admin!");
+      db.ref(`portal/hw_account_requests/${reqId}/status`).set("Approved");
     }
 
-    function clearSosAlerts() {
-      saveData('hw_sos_alerts', []);
-      renderAdminDashboard();
+    function rejectAccountReq(reqId) {
+      db.ref(`portal/hw_account_requests/${reqId}/status`).set("Rejected");
     }
 
-    function assignTask() {
-      const empId = document.getElementById('assignEmpSelect').value;
-      const title = document.getElementById('taskTitleInput').value.trim();
-      const deadline = document.getElementById('taskTimeInput').value || 'Today';
-      const priority = document.getElementById('taskPrioritySelect').value;
-      const points = parseInt(document.getElementById('taskPointsInput').value) || 20;
-
-      if (!empId || !title) return alert("Select employee and enter task title!");
-
-      const emps = getData('hw_employees', defaultEmployees);
-      const emp = emps.find(e => e.id === empId);
-
-      const tasks = getData('hw_tasks', []);
-      tasks.unshift({
-        id: 'TSK_' + Date.now(),
-        empId: emp.id,
-        empName: emp.name,
-        title: title,
-        deadline: deadline,
-        priority: priority,
-        points: points,
-        status: 'Pending',
-        date: getTodayDate(),
-        transferLog: '',
-        proofPhoto: '',
-        proofNote: ''
+    async function markStaffAttendance(status) {
+      if (!currentUser) return;
+      const ok = await checkZoneRadius(ATTENDANCE_RADIUS_METERS, "Attendance");
+      if (!ok) return;
+      const today = getTodayKey();
+      db.ref(`portal/hw_attendance/${today}/${currentUser.id}`).set({
+        status,
+        time: new Date().toLocaleTimeString(),
+        by: "STAFF_10M"
       });
-      saveData('hw_tasks', tasks);
-
-      document.getElementById('taskTitleInput').value = '';
-      renderAdminDashboard();
-      alert(`Task "${title}" (+${points} Pts) assigned to ${emp.name}!`);
-    }
-
-    function persistProofDraft() {
-      const taskId = document.getElementById('proofTaskTargetId').value;
-      const titleText = document.getElementById('proofTaskTitleText').innerText;
-      const note = document.getElementById('taskProofNoteInput').value;
-      if (!taskId) return;
-      localStorage.setItem('hw_pending_proof', JSON.stringify({
-        taskId,
-        titleText,
-        note,
-        photo: currentTaskProofBase64
-      }));
-    }
-
-    function restorePendingProofDraft() {
-      const draft = getData('hw_pending_proof', null);
-      if (!draft || !draft.taskId) return;
-      switchMainTab('myDuties');
-      document.getElementById('proofTaskTargetId').value = draft.taskId;
-      document.getElementById('proofTaskTitleText').innerText = draft.titleText || '';
-      document.getElementById('taskProofNoteInput').value = draft.note || '';
-      currentTaskProofBase64 = draft.photo || '';
-      const prev = document.getElementById('taskProofPreview');
-      const statusText = document.getElementById('taskProofStatusText');
-      if (currentTaskProofBase64) {
-        prev.innerHTML = `<img src="${currentTaskProofBase64}" class="w-full h-36 object-cover rounded-xl border border-emerald-500/30">`;
-        prev.classList.remove('hidden');
-        statusText.innerText = "Photo attached and saved.";
-      } else {
-        prev.classList.add('hidden');
-        statusText.innerText = "No photo selected yet.";
-      }
-      openModal('taskProofModal');
-    }
-
-    function cancelTaskProofModal() {
-      localStorage.removeItem('hw_pending_proof');
-      currentTaskProofBase64 = '';
-      closeModal('taskProofModal');
-    }
-
-    function openCompleteProofModal(taskId) {
-      const tasks = getData('hw_tasks', []);
-      const task = tasks.find(t => t.id === taskId);
-      if (!task) return;
-
-      document.getElementById('proofTaskTargetId').value = task.id;
-      document.getElementById('proofTaskTitleText').innerText = `Duty: ${task.title} (+${task.points || 20} Points)`;
-      document.getElementById('taskProofCameraInput').value = '';
-      document.getElementById('taskProofGalleryInput').value = '';
-      document.getElementById('taskProofNoteInput').value = '';
-      document.getElementById('taskProofPreview').classList.add('hidden');
-      document.getElementById('taskProofStatusText').innerText = "Tap Take Photo or Choose Photo.";
-      currentTaskProofBase64 = '';
-      persistProofDraft();
-      openModal('taskProofModal');
-    }
-
-    async function handleTaskProofImage(event) {
-      const file = event.target.files && event.target.files[0];
-      if (!file) return;
-      const statusText = document.getElementById('taskProofStatusText');
-      statusText.innerText = "Processing photo...";
-      try {
-        currentTaskProofBase64 = await compressImageFile(file, 720, 0.68);
-        const prev = document.getElementById('taskProofPreview');
-        prev.innerHTML = `<img src="${currentTaskProofBase64}" class="w-full h-36 object-cover rounded-xl border border-emerald-500/30">`;
-        prev.classList.remove('hidden');
-        statusText.innerText = "Photo ready! Now tap Submit & Mark Completed.";
-        persistProofDraft();
-      } catch (e) {
-        statusText.innerText = "Could not load photo. Try again.";
-      }
-    }
-
-    function confirmCompleteTaskWithProof() {
-      const taskId = document.getElementById('proofTaskTargetId').value;
-      const note = document.getElementById('taskProofNoteInput').value.trim();
-      const tasks = getData('hw_tasks', []);
-      const idx = tasks.findIndex(t => t.id === taskId);
-
-      if (idx !== -1) {
-        tasks[idx].status = 'Completed';
-        tasks[idx].completedAt = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        tasks[idx].proofPhoto = currentTaskProofBase64;
-        tasks[idx].proofNote = note || 'Completed';
-        saveData('hw_tasks', tasks);
-      }
-
-      localStorage.removeItem('hw_pending_proof');
-      currentTaskProofBase64 = '';
-      closeModal('taskProofModal');
-      renderStaffDashboard();
-      alert("Duty completed and proof submitted!");
-    }
-
-    function submitExtraSelfWork() {
-      const title = document.getElementById('extraWorkInput').value.trim();
-      if (!title) return alert("Enter work details first!");
-
-      const extra = getData('hw_extra_work', []);
-      extra.unshift({
-        empId: currentUser.id,
-        empName: currentUser.name,
-        title: title,
-        date: getTodayDate(),
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      });
-      saveData('hw_extra_work', extra);
-      document.getElementById('extraWorkInput').value = '';
-      renderStaffDashboard();
-      alert("Extra self-work logged (+15 Points)!");
-    }
-
-    function openDutyTransferModal(taskId) {
-      const tasks = getData('hw_tasks', []);
-      const task = tasks.find(t => t.id === taskId);
-      if (!task || task.status === 'Completed') return;
-
-      const emps = getData('hw_employees', defaultEmployees).filter(e => e.role === 'staff' && e.status === 'active' && e.id !== task.empId);
-      if (emps.length === 0) return alert("No other active staff available for transfer!");
-
-      document.getElementById('transferTaskTargetId').value = task.id;
-      document.getElementById('transferTaskInfoText').innerHTML = `Duty: <b class="text-white">${task.title}</b><br>Currently Assigned: <span class="text-amber-400 font-bold">${task.empName} (${task.empId})</span>`;
-      document.getElementById('transferToEmpSelect').innerHTML = emps.map(e => `<option value="${e.id}">${e.name} (${e.id})</option>`).join('');
-      document.getElementById('transferDutyReason').value = '';
-      openModal('transferDutyModal');
-    }
-
-    function confirmDutyTransfer() {
-      const taskId = document.getElementById('transferTaskTargetId').value;
-      const newEmpId = document.getElementById('transferToEmpSelect').value;
-      const reason = document.getElementById('transferDutyReason').value.trim() || 'Schedule adjustment';
-
-      const emps = getData('hw_employees', defaultEmployees);
-      const newEmp = emps.find(e => e.id === newEmpId);
-      const tasks = getData('hw_tasks', []);
-      const idx = tasks.findIndex(t => t.id === taskId);
-
-      if (idx !== -1 && newEmp) {
-        const oldName = tasks[idx].empName;
-        const byWho = currentUser.role === 'admin' ? 'Admin' : oldName;
-        tasks[idx].empId = newEmp.id;
-        tasks[idx].empName = newEmp.name;
-        tasks[idx].transferLog = `Transferred from ${oldName} by ${byWho} (${reason})`;
-        saveData('hw_tasks', tasks);
-      }
-
-      closeModal('transferDutyModal');
-      if (currentUser.role === 'admin') renderAdminDashboard();
-      else renderStaffDashboard();
-      alert(`Duty transferred to ${newEmp.name}!`);
-    }
-
-    function markStaffAttendance(status, method = 'Direct') {
-      const today = getTodayDate();
-      const att = getData('hw_attendance', []);
-      const exists = att.find(a => a.empId === currentUser.id && a.date === today);
-      if (exists) return alert("Attendance already marked for today!");
-
-      att.unshift({
-        empId: currentUser.id,
-        empName: currentUser.name,
-        date: today,
-        status: status,
-        time: `${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} (${method})`
-      });
-      saveData('hw_attendance', att);
-      renderStaffDashboard();
-      alert(`Attendance marked: ${status} (+10 Pts)`);
-    }
-
-    function adminManualAttendance(empId, status) {
-      const dateInput = document.getElementById('adminAttDateInput');
-      const targetDate = (dateInput && dateInput.value) ? dateInput.value : getTodayDate();
-      const emps = getData('hw_employees', defaultEmployees);
-      const emp = emps.find(e => e.id === empId);
-      if (!emp) return;
-
-      let att = getData('hw_attendance', []);
-      att = att.filter(a => !(a.empId === empId && a.date === targetDate));
-      att.unshift({
-        empId: emp.id,
-        empName: emp.name,
-        date: targetDate,
-        status: status,
-        time: 'Marked by Admin'
-      });
-      saveData('hw_attendance', att);
-      renderAdminDashboard();
     }
 
     function openLeaveReasonBox(type) {
-      currentLeaveType = type;
-      document.getElementById('leaveBoxLabel').innerText = `Reason for ${type}:`;
-      document.getElementById('leaveReasonInput').value = '';
-      openModal('leaveReasonBox');
+      pendingLeaveType = type;
+      document.getElementById("leaveBoxLabel").textContent = `Reason for ${type}:`;
+      document.getElementById("leaveReasonInput").value = "";
+      document.getElementById("leaveReasonBox").classList.remove("hidden");
     }
 
     function submitStaffLeave() {
-      const reason = document.getElementById('leaveReasonInput').value.trim();
-      if (!reason) return alert("Please enter a reason!");
-
-      const leaves = getData('hw_leave_requests', []);
-      leaves.unshift({
-        id: 'LV_' + Date.now(),
+      const reason = document.getElementById("leaveReasonInput").value.trim();
+      if (!reason || !currentUser) return;
+      const reqId = "LV_" + Date.now();
+      db.ref(`portal/hw_leave_requests/${reqId}`).set({
+        id: reqId,
         empId: currentUser.id,
         empName: currentUser.name,
-        date: getTodayDate(),
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        type: currentLeaveType,
-        reason: reason,
-        status: 'Pending'
+        date: getTodayKey(),
+        time: new Date().toLocaleTimeString(),
+        type: pendingLeaveType,
+        reason,
+        status: "Pending"
       });
-      saveData('hw_leave_requests', leaves);
-      closeModal('leaveReasonBox');
-      alert(`${currentLeaveType} request sent to Admin!`);
+      closeModal("leaveReasonBox");
+      alert("Leave request sent.");
     }
 
-    function handleLeaveAction(leaveId, action) {
-      const leaves = getData('hw_leave_requests', []);
-      const idx = leaves.findIndex(l => l.id === leaveId);
-      if (idx === -1) return;
-
-      leaves[idx].status = action;
-      saveData('hw_leave_requests', leaves);
-
-      if (action === 'Approved') {
-        const att = getData('hw_attendance', []);
-        const filtered = att.filter(a => !(a.empId === leaves[idx].empId && a.date === leaves[idx].date));
-        filtered.unshift({
-          empId: leaves[idx].empId,
-          empName: leaves[idx].empName,
-          date: leaves[idx].date,
-          status: leaves[idx].type,
-          time: 'Approved'
-        });
-        saveData('hw_attendance', filtered);
-      }
-      renderAdminDashboard();
+    function sendUrgentSosAlert() {
+      if (!currentUser) return;
+      const sosId = "SOS_" + Date.now();
+      db.ref(`portal/hw_sos/${sosId}`).set({
+        empId: currentUser.id,
+        empName: currentUser.name,
+        time: new Date().toLocaleTimeString()
+      });
+      alert("Urgent SOS sent.");
     }
 
-    function saveNewEmployee() {
-      const name = document.getElementById('newEmpName').value.trim();
-      const id = document.getElementById('newEmpId').value.trim().toUpperCase();
-      if (!name || !id) return alert("Fill all fields!");
-
-      const emps = getData('hw_employees', defaultEmployees);
-      if (emps.some(e => e.id.toUpperCase() === id)) return alert("Employee ID already exists!");
-
-      emps.push({ id, name, role: 'staff', status: 'active', photo: '', banUntil: null, banReason: '' });
-      saveData('hw_employees', emps);
-      document.getElementById('newEmpName').value = '';
-      document.getElementById('newEmpId').value = '';
-      closeModal('addEmpModal');
-      renderAdminDashboard();
+    function clearSosAlerts() {
+      db.ref("portal/hw_sos").remove();
     }
 
-    function openBanModal(empId) {
-      document.getElementById('banEmpTargetId').value = empId;
-      document.getElementById('banReasonInput').value = '';
-      openModal('banEmpModal');
+    // ================= DUTY PROOF (5m RADIUS + SAFE POINT INCREMENT) =================
+    function openProofModal(taskId) {
+      activeProofTaskId = taskId;
+      compressedProofDataUrl = "";
+      const task = portalState.tasks[taskId];
+      document.getElementById("proofTaskTitleLabel").textContent = task ? `Duty: ${task.title}` : "";
+      const img = document.getElementById("proofPreviewImg");
+      img.src = "";
+      img.classList.add("hidden");
+      openModal("dutyProofModal");
     }
 
-    function toggleBanDuration(val) {
-      document.getElementById('tempTimeGroup').style.display = val === 'Temporary' ? 'block' : 'none';
+    function handleProofFileChange(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          const maxW = 800;
+          const scale = img.width > maxW ? maxW / img.width : 1;
+          canvas.width = img.width * scale;
+          canvas.height = img.height * scale;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          compressedProofDataUrl = canvas.toDataURL("image/jpeg", 0.7);
+          const preview = document.getElementById("proofPreviewImg");
+          preview.src = compressedProofDataUrl;
+          preview.classList.remove("hidden");
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
     }
 
-    function confirmBanEmployee() {
-      const empId = document.getElementById('banEmpTargetId').value;
-      const type = document.getElementById('banTypeSelect').value;
-      const hours = parseInt(document.getElementById('banDurationSelect').value);
-      const reason = document.getElementById('banReasonInput').value.trim() || 'Suspended by Admin';
-
-      const emps = getData('hw_employees', defaultEmployees);
-      const idx = emps.findIndex(e => e.id === empId);
-      if (idx !== -1) {
-        emps[idx].status = 'banned';
-        emps[idx].banReason = reason;
-        emps[idx].banUntil = type === 'Temporary' ? Date.now() + hours * 3600000 : null;
-        saveData('hw_employees', emps);
-      }
-      closeModal('banEmpModal');
-      renderAdminDashboard();
-    }
-
-    function unbanEmployee(empId) {
-      const emps = getData('hw_employees', defaultEmployees);
-      const idx = emps.findIndex(e => e.id === empId);
-      if (idx !== -1) {
-        emps[idx].status = 'active';
-        emps[idx].banReason = '';
-        emps[idx].banUntil = null;
-        saveData('hw_employees', emps);
-      }
-      renderAdminDashboard();
-    }
-
-    function searchEmployeeDetail() {
-      const q = document.getElementById('adminSearchQuery').value.trim().toLowerCase();
-      if (!q) return;
-
-      const emps = getData('hw_employees', defaultEmployees);
-      const emp = emps.find(e => e.id.toLowerCase() === q || e.name.toLowerCase().includes(q));
-      const card = document.getElementById('searchResultsCard');
-
-      if (!emp) {
-        alert("No employee found with that ID or Name!");
-        card.classList.add('hidden');
+    async function submitDutyWithProof() {
+      if (!activeProofTaskId || !currentUser) return;
+      const ok = await checkZoneRadius(DUTY_SUBMIT_RADIUS_METERS, "Duty Submit");
+      if (!ok) return;
+      if (!compressedProofDataUrl) {
+        alert("Please take or choose a photo proof first.");
         return;
       }
+      const task = portalState.tasks[activeProofTaskId];
+      if (!task || task.status === "Completed") {
+        closeModal("dutyProofModal");
+        return;
+      }
+      const pts = Number(task.points) || 20;
+      const targetEmpId = task.empId || currentUser.id;
 
-      card.classList.remove('hidden');
-      const av = document.getElementById('searchRepAvatar');
-      av.innerHTML = emp.photo ? `<img src="${emp.photo}" class="w-full h-full object-cover">` : emp.name.charAt(0).toUpperCase();
-      document.getElementById('searchRepName').innerText = emp.name + ` (${emp.role.toUpperCase()})`;
-      document.getElementById('searchRepId').innerText = `ID: ${emp.id} • Status: ${emp.status.toUpperCase()}`;
-      document.getElementById('searchRepPointsBadge').innerText = `${getEmployeePoints(emp.id)} Total Points`;
+      await db.ref(`portal/hw_tasks/${activeProofTaskId}`).update({
+        status: "Completed",
+        proofPhoto: compressedProofDataUrl,
+        completedAt: new Date().toISOString()
+      });
 
-      const att = getData('hw_attendance', []).filter(a => a.empId === emp.id);
-      const pCount = att.filter(a => a.status === 'Present').length;
-      const aCount = att.filter(a => a.status === 'Absent').length;
-      const lCount = att.filter(a => a.status === 'Leave' || a.status === 'Half-Day').length;
-      document.getElementById('searchAttSummary').innerHTML = `
-        <p class="text-blue-400 font-black uppercase text-[10px]">Attendance Summary</p>
-        <p>Present: <b class="text-emerald-400">${pCount}</b> • Absent: <b class="text-rose-400">${aCount}</b> • Leaves: <b class="text-amber-400">${lCount}</b></p>
-        <p class="text-[11px] text-slate-400 pt-1">Last Entry: ${att[0] ? `${att[0].date} (${att[0].status})` : 'None'}</p>
-      `;
+      await db.ref(`portal/hw_employees/${targetEmpId}/points`).set(
+        firebase.database.ServerValue.increment(pts)
+      );
 
-      const tasks = getData('hw_tasks', []).filter(t => t.empId === emp.id);
-      const doneCount = tasks.filter(t => t.status === 'Completed').length;
-      const pendCount = tasks.filter(t => t.status === 'Pending').length;
-      document.getElementById('searchTaskSummary').innerHTML = `
-        <p class="text-purple-400 font-black uppercase text-[10px]">Duties Summary</p>
-        <p>Completed Tasks: <b class="text-emerald-400">${doneCount}</b> • Pending: <b class="text-amber-400">${pendCount}</b></p>
-        <p class="text-[11px] text-slate-400 pt-1">Latest Task: ${tasks[0] ? tasks[0].title : 'None'}</p>
-      `;
+      closeModal("dutyProofModal");
+      activeProofTaskId = null;
+      compressedProofDataUrl = "";
+    }
 
-      document.getElementById('searchDetailedHistory').innerHTML = `
-        <p class="text-[10px] font-black uppercase text-slate-500">Recent Duties & Attendance Dates:</p>
-        <div class="flex flex-wrap gap-1.5">
-          ${att.slice(0, 8).map(a => `<span class="px-2 py-0.5 rounded-lg bg-slate-900 border border-slate-800 text-[11px]">${a.date}: <b class="text-white">${a.status}</b></span>`).join('') || '<span>No attendance logs</span>'}
-        </div>
-      `;
+    // ================= SEARCH & CSV =================
+    function searchEmployeeDetail() {
+      const q = (document.getElementById("adminSearchQuery").value || "").trim().toLowerCase();
+      if (!q) return;
+      const found = Object.values(portalState.employees || {}).find(
+        (e) => e.id.toLowerCase().includes(q) || (e.name || "").toLowerCase().includes(q)
+      );
+      const card = document.getElementById("searchResultsCard");
+      if (!found) {
+        card.classList.add("hidden");
+        alert("No employee found.");
+        return;
+      }
+      card.classList.remove("hidden");
+      document.getElementById("searchRepAvatar").textContent = (found.name || "U").charAt(0).toUpperCase();
+      document.getElementById("searchRepName").textContent = found.name;
+      document.getElementById("searchRepId").textContent = `${found.id} • ${found.role || "Staff"}`;
+      document.getElementById("searchRepPointsBadge").textContent = `${getSafePoints(found)} Points`;
+
+      let pDays = 0;
+      let lDays = 0;
+      Object.values(portalState.attendance || {}).forEach((dMap) => {
+        const st = dMap && dMap[found.id] && dMap[found.id].status;
+        if (st === "Present" || st === "Half-Day") pDays++;
+        if (st === "Leave") lDays++;
+      });
+      document.getElementById("searchAttSummary").innerHTML = `<p class="font-black text-emerald-400">Attendance Summary</p><p>Present/Half-Day: ${pDays} • Leaves: ${lDays}</p>`;
+
+      const uTasks = Object.values(portalState.tasks || {}).filter((t) => t.empId === found.id);
+      const done = uTasks.filter((t) => t.status === "Completed").length;
+      document.getElementById("searchTaskSummary").innerHTML = `<p class="font-black text-indigo-400">Duties Summary</p><p>Completed: ${done} / ${uTasks.length}</p>`;
+      document.getElementById("searchDetailedHistory").innerHTML = uTasks.map((t) => `<div>• ${t.title} — <strong>${t.status}</strong></div>`).join("");
     }
 
     function downloadCsvReport() {
-      const emps = getData('hw_employees', defaultEmployees).filter(e => e.role === 'staff');
-      const att = getData('hw_attendance', []);
-      const tasks = getData('hw_tasks', []);
-
-      let csv = "Employee ID,Name,Present Days,Absent Days,Leaves,Completed Duties,Pending Duties,Total Points\n";
-      emps.forEach(e => {
-        const p = att.filter(a => a.empId === e.id && a.status === 'Present').length;
-        const a = att.filter(a => a.empId === e.id && a.status === 'Absent').length;
-        const l = att.filter(a => a.empId === e.id && (a.status === 'Leave' || a.status === 'Half-Day')).length;
-        const done = tasks.filter(t => t.empId === e.id && t.status === 'Completed').length;
-        const pend = tasks.filter(t => t.empId === e.id && t.status === 'Pending').length;
-        const pts = getEmployeePoints(e.id);
-        csv += `"${e.id}","${e.name}",${p},${a},${l},${done},${pend},${pts}\n`;
+      const rows = [["ID", "Name", "Role", "Points"]];
+      Object.values(portalState.employees || {}).forEach((e) => {
+        rows.push([e.id, e.name, e.role || "", getSafePoints(e)]);
       });
-
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `WorkManagement_Report_${getTodayDate()}.csv`;
-      link.click();
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `work-report-${getTodayKey()}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
     }
 
-    function renderAdminDashboard() {
-      const today = getTodayDate();
-      const selectedDate = (document.getElementById('adminAttDateInput') && document.getElementById('adminAttDateInput').value) || today;
-      const emps = getData('hw_employees', defaultEmployees);
-      const staffList = emps.filter(e => e.role === 'staff');
-      const att = getData('hw_attendance', []);
-      const tasks = getData('hw_tasks', []);
-      const accReqs = getData('hw_account_requests', []);
-      const leaves = getData('hw_leave_requests', []).filter(l => l.status === 'Pending');
-      const sosAlerts = getData('hw_sos_alerts', []);
+    // ================= QR GENERATOR & SCANNER =================
+    function drawQrInto(containerId, text) {
+      const el = document.getElementById(containerId);
+      if (!el || typeof QRCode === "undefined") return;
+      el.innerHTML = "";
+      new QRCode(el, { text, width: 148, height: 148 });
+    }
 
-      document.getElementById('statTotalEmp').innerText = staffList.length;
-      document.getElementById('statPresent').innerText = att.filter(a => a.date === today && a.status === 'Present').length;
-      document.getElementById('statLeave').innerText = att.filter(a => a.date === today && (a.status === 'Leave' || a.status === 'Half-Day')).length;
-      document.getElementById('statReqCount').innerText = accReqs.length + leaves.length;
+    function renderAdminQrHub() {
+      const code = `ATT:${getTodayKey()}`;
+      drawQrInto("adminDailyAttQr", code);
+      document.getElementById("adminDailyAttCodeText").textContent = code;
+      generateZoneQr();
+      generateSelectedEmpQr();
+    }
 
-      const sosBox = document.getElementById('adminSosContainer');
-      if (sosAlerts.length > 0) {
-        sosBox.classList.remove('hidden');
-        document.getElementById('adminSosList').innerHTML = sosAlerts.map(s => `
-          <div class="bg-rose-950/50 border border-rose-500/30 p-3 rounded-2xl flex justify-between items-center text-xs">
-            <span><b class="text-rose-400">${s.empName} (${s.empId}):</b> ${s.message}</span>
-            <span class="text-[10px] font-mono text-slate-400">${s.time}</span>
-          </div>
-        `).join('');
-      } else {
-        sosBox.classList.add('hidden');
+    function generateZoneQr() {
+      const zone = document.getElementById("qrZoneSelect").value || "KITCHEN";
+      const code = `ZONE:${zone}`;
+      drawQrInto("adminZoneQr", code);
+      document.getElementById("adminZoneCodeText").textContent = code;
+    }
+
+    function generateSelectedEmpQr() {
+      const empId = document.getElementById("qrEmpSelect").value;
+      if (!empId) return;
+      const code = `EMP:${empId}`;
+      drawQrInto("adminEmpIdQr", code);
+      document.getElementById("adminEmpCodeText").textContent = code;
+    }
+
+    function renderStaffIdCard() {
+      if (!currentUser) return;
+      document.getElementById("staffCardName").textContent = currentUser.name;
+      document.getElementById("staffCardId").textContent = currentUser.id;
+      document.getElementById("staffCardPoints").textContent = `${getSafePoints(currentUser)} Points`;
+      drawQrInto("staffIdQrBox", `EMP:${currentUser.id}`);
+    }
+
+    function openQrScanner(mode) {
+      qrScanMode = mode;
+      openModal("qrScannerModal");
+      document.getElementById("qrScannerStatus").textContent = "Starting camera...";
+      if (typeof Html5Qrcode === "undefined") {
+        document.getElementById("qrScannerStatus").textContent = "QR scanner library unavailable.";
+        return;
       }
-
-      const ranked = staffList.map(s => ({ ...s, pts: getEmployeePoints(s.id) })).sort((a, b) => b.pts - a.pts);
-      document.getElementById('adminLeaderboardList').innerHTML = ranked.map((s, idx) => `
-        <div class="bg-slate-950 p-3.5 rounded-2xl border border-slate-800 flex justify-between items-center">
-          <div class="flex items-center space-x-2.5">
-            <span class="w-7 h-7 rounded-xl bg-amber-500/20 text-amber-400 font-black text-xs flex items-center justify-center">#${idx + 1}</span>
-            <div>
-              <p class="text-xs font-black text-white">${s.name}</p>
-              <p class="text-[10px] font-mono text-slate-400">${s.id}</p>
-            </div>
-          </div>
-          <span class="text-xs font-black text-amber-400">${s.pts} Pts</span>
-        </div>
-      `).join('');
-
-      const adminTasksList = document.getElementById('adminTasksList');
-      adminTasksList.innerHTML = tasks.length === 0
-        ? `<p class="text-xs text-slate-500">No duties assigned yet.</p>`
-        : tasks.map(t => `
-            <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 flex flex-wrap justify-between items-center gap-3">
-              <div class="space-y-1">
-                <div class="flex items-center space-x-2">
-                  <span class="font-black text-sm text-white">${t.title}</span>
-                  <span class="text-[10px] px-2 py-0.5 rounded-full font-black bg-amber-500/20 text-amber-400">+${t.points || 20} Pts</span>
-                  <span class="text-[10px] px-2 py-0.5 rounded-full font-black ${t.priority === 'High' ? 'bg-rose-500/20 text-rose-400' : 'bg-indigo-500/20 text-indigo-400'}">${t.priority}</span>
-                </div>
-                <p class="text-xs text-slate-400">Assigned to: <b class="text-indigo-300">${t.empName} (${t.empId})</b> • Deadline: ${t.deadline}</p>
-                ${t.transferLog ? `<p class="text-[11px] text-amber-400"><i class="fa-solid fa-right-left mr-1"></i>${t.transferLog}</p>` : ''}
-                ${t.proofNote ? `<p class="text-[11px] text-emerald-400"><i class="fa-solid fa-check-circle mr-1"></i>Note: ${t.proofNote}</p>` : ''}
-                ${t.proofPhoto ? `<img src="${t.proofPhoto}" class="mt-2 h-24 rounded-xl border border-emerald-500/30 object-cover">` : ''}
-              </div>
-              <div class="flex items-center space-x-2">
-                <span class="px-3 py-1 rounded-full text-[11px] font-black ${t.status === 'Completed' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}">${t.status}</span>
-                ${t.status === 'Pending' ? `<button type="button" onclick="openDutyTransferModal('${t.id}')" class="liquid-btn glow-amber px-3 py-1.5 rounded-xl text-[11px] font-black text-amber-400">Transfer</button>` : ''}
-              </div>
-            </div>
-          `).join('');
-
-      document.getElementById('assignEmpSelect').innerHTML = staffList
-        .filter(e => e.status === 'active')
-        .map(e => `<option value="${e.id}">${e.name} (${e.id})</option>`).join('');
-
-      const accListEl = document.getElementById('accountRequestsList');
-      accListEl.innerHTML = accReqs.length === 0
-        ? `<p class="text-xs text-slate-500">No pending account requests.</p>`
-        : accReqs.map(r => `
-            <div class="bg-slate-950 p-4 rounded-2xl border border-cyan-500/30 flex justify-between items-center gap-3">
-              <div class="flex items-center space-x-3">
-                <div class="w-10 h-10 rounded-xl bg-cyan-600 flex items-center justify-center font-black text-white overflow-hidden">
-                  ${r.photo ? `<img src="${r.photo}" class="w-full h-full object-cover">` : r.name.charAt(0)}
-                </div>
-                <div>
-                  <h4 class="text-xs font-black text-white">${r.name} <span class="text-cyan-400 font-mono">(${r.empId})</span></h4>
-                  <p class="text-[11px] text-slate-400">${r.details}</p>
-                </div>
-              </div>
-              <div class="flex space-x-2">
-                <button type="button" onclick="approveAccountRequest('${r.id}')" class="liquid-btn glow-emerald px-3 py-1.5 rounded-xl text-[11px] font-black text-emerald-400">Approve</button>
-                <button type="button" onclick="rejectAccountRequest('${r.id}')" class="liquid-btn glow-rose px-3 py-1.5 rounded-xl text-[11px] font-black text-rose-400">Reject</button>
-              </div>
-            </div>
-          `).join('');
-
-      const leaveBody = document.getElementById('leaveRequestsTableBody');
-      leaveBody.innerHTML = leaves.length === 0
-        ? `<tr><td colspan="5" class="p-4 text-center text-slate-500">No pending leave requests.</td></tr>`
-        : leaves.map(l => `
-            <tr>
-              <td class="p-3 font-bold text-white">${l.empName} <span class="text-slate-400 font-mono">(${l.empId})</span></td>
-              <td class="p-3 text-slate-300">${l.date} • ${l.time}</td>
-              <td class="p-3"><span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500/20 text-amber-400">${l.type}</span></td>
-              <td class="p-3 text-slate-300">${l.reason}</td>
-              <td class="p-3 text-right space-x-1">
-                <button type="button" onclick="handleLeaveAction('${l.id}', 'Approved')" class="liquid-btn glow-emerald px-3 py-1 rounded-lg text-[11px] font-black text-emerald-400">Approve</button>
-                <button type="button" onclick="handleLeaveAction('${l.id}', 'Rejected')" class="liquid-btn glow-rose px-3 py-1 rounded-lg text-[11px] font-black text-rose-400">Reject</button>
-              </td>
-            </tr>
-          `).join('');
-
-      document.getElementById('empTableBody').innerHTML = emps.map(e => {
-        const dayRec = att.find(a => a.empId === e.id && a.date === selectedDate);
-        const dayBadge = dayRec
-          ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-black ${dayRec.status === 'Present' ? 'bg-emerald-500/20 text-emerald-400' : dayRec.status === 'Absent' ? 'bg-rose-500/20 text-rose-400' : 'bg-amber-500/20 text-amber-400'}">${dayRec.status}</span>`
-          : `<span class="text-slate-500 text-[10px]">Not Marked</span>`;
-
-        return `
-          <tr>
-            <td class="p-3 font-mono font-bold text-indigo-400">${e.id}</td>
-            <td class="p-3 font-bold text-white">${e.name} <span class="text-[10px] text-slate-400 uppercase">(${e.role})</span></td>
-            <td class="p-3">${dayBadge}</td>
-            <td class="p-3 space-x-1">
-              ${e.role !== 'admin' ? `
-                <button type="button" onclick="adminManualAttendance('${e.id}', 'Present')" class="px-2 py-1 rounded-lg bg-emerald-500/20 text-emerald-400 font-black text-[10px]">P</button>
-                <button type="button" onclick="adminManualAttendance('${e.id}', 'Absent')" class="px-2 py-1 rounded-lg bg-rose-500/20 text-rose-400 font-black text-[10px]">A</button>
-                <button type="button" onclick="adminManualAttendance('${e.id}', 'Leave')" class="px-2 py-1 rounded-lg bg-amber-500/20 text-amber-400 font-black text-[10px]">L</button>
-              ` : '-'}
-            </td>
-            <td class="p-3 text-right">
-              ${e.role !== 'admin' ? (
-                e.status === 'active'
-                  ? `<button type="button" onclick="openBanModal('${e.id}')" class="liquid-btn glow-rose px-3 py-1 rounded-lg text-[11px] font-black text-rose-400">Ban</button>`
-                  : `<button type="button" onclick="unbanEmployee('${e.id}')" class="liquid-btn glow-emerald px-3 py-1 rounded-lg text-[11px] font-black text-emerald-400">Unban</button>`
-              ) : '<span class="text-slate-500 text-[10px]">Protected</span>'}
-            </td>
-          </tr>
-        `;
-      }).join('');
-
-      const pendingTasks = tasks.filter(t => t.status === 'Pending');
-      document.getElementById('dutyTransferList').innerHTML = pendingTasks.length === 0
-        ? `<p class="text-xs text-slate-500">No pending duties available to transfer.</p>`
-        : pendingTasks.map(t => `
-            <div class="bg-slate-950 p-4 rounded-2xl border border-amber-500/20 flex justify-between items-center gap-3">
-              <div>
-                <h4 class="text-sm font-black text-white">${t.title}</h4>
-                <p class="text-xs text-slate-400">Current Staff: <b class="text-amber-400">${t.empName} (${t.empId})</b> • Deadline: ${t.deadline}</p>
-                ${t.transferLog ? `<p class="text-[11px] text-indigo-400 mt-1">${t.transferLog}</p>` : ''}
-              </div>
-              <button type="button" onclick="openDutyTransferModal('${t.id}')" class="liquid-btn glow-amber px-4 py-2 rounded-xl text-xs font-black text-amber-400">
-                <i class="fa-solid fa-right-left mr-1"></i> Transfer Duty
-              </button>
-            </div>
-          `).join('');
+      html5QrScanner = new Html5Qrcode("qrReaderBox");
+      html5QrScanner.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 200, height: 200 } },
+        async (decodedText) => {
+          const clean = (decodedText || "").trim();
+          await closeQrScannerModal();
+          if (qrScanMode === "login") {
+            const idPart = clean.startsWith("EMP:") ? clean.replace("EMP:", "") : clean;
+            handleLogin(idPart);
+          } else if (qrScanMode === "attendance") {
+            if (clean === `ATT:${getTodayKey()}` || clean.startsWith("ZONE:")) {
+              markStaffAttendance("Present");
+            } else {
+              alert("Invalid or expired attendance QR.");
+            }
+          } else if (qrScanMode === "adminInspect") {
+            const idPart = clean.startsWith("EMP:") ? clean.replace("EMP:", "") : clean;
+            document.getElementById("adminSearchQuery").value = idPart;
+            switchMainTab("search");
+            searchEmployeeDetail();
+          }
+        },
+        () => {}
+      ).then(() => {
+        document.getElementById("qrScannerStatus").textContent = "Point camera at QR code...";
+      }).catch((err) => {
+        document.getElementById("qrScannerStatus").textContent = "Camera error: " + err;
+      });
     }
 
-    function renderStaffDashboard() {
-      const today = getTodayDate();
-      const att = getData('hw_attendance', []);
-      const myAttAll = att.filter(a => a.empId === currentUser.id);
-      const myTodayAtt = myAttAll.find(a => a.date === today);
-
-      const badge = document.getElementById('attBadge');
-      const ts = document.getElementById('attTimestamp');
-      const actionBtns = document.getElementById('attendanceActionButtons');
-
-      if (myTodayAtt) {
-        badge.innerText = myTodayAtt.status;
-        badge.className = `px-3 py-1 rounded-full text-xs font-black ${myTodayAtt.status === 'Present' ? 'bg-emerald-500/20 text-emerald-400' : myTodayAtt.status === 'Absent' ? 'bg-rose-500/20 text-rose-400' : 'bg-amber-500/20 text-amber-400'}`;
-        ts.innerText = `${myTodayAtt.date} • ${myTodayAtt.time}`;
-        actionBtns.classList.add('hidden');
-      } else {
-        badge.innerText = 'Not Marked';
-        badge.className = 'px-3 py-1 rounded-full text-xs font-black bg-slate-800 text-slate-400';
-        ts.innerText = today;
-        actionBtns.classList.remove('hidden');
+    async function closeQrScannerModal() {
+      if (html5QrScanner) {
+        try {
+          await html5QrScanner.stop();
+          await html5QrScanner.clear();
+        } catch (e) {}
+        html5QrScanner = null;
       }
-
-      document.getElementById('staffStatP').innerText = myAttAll.filter(a => a.status === 'Present').length;
-      document.getElementById('staffStatA').innerText = myAttAll.filter(a => a.status === 'Absent').length;
-      document.getElementById('staffStatL').innerText = myAttAll.filter(a => a.status === 'Leave' || a.status === 'Half-Day').length;
-
-      document.getElementById('staffMyPoints').innerText = `${getEmployeePoints(currentUser.id)} Pts`;
-      const staffList = getData('hw_employees', defaultEmployees).filter(e => e.role === 'staff');
-      const ranked = staffList.map(s => ({ ...s, pts: getEmployeePoints(s.id) })).sort((a, b) => b.pts - a.pts);
-      document.getElementById('staffLeaderboardList').innerHTML = ranked.map((s, idx) => `
-        <div class="flex justify-between items-center text-xs p-2 rounded-xl ${s.id === currentUser.id ? 'bg-indigo-500/20 border border-indigo-500/40' : 'bg-slate-900'}">
-          <span class="font-bold text-white">#${idx + 1} ${s.name}</span>
-          <span class="font-black text-amber-400">${s.pts} Pts</span>
-        </div>
-      `).join('');
-
-      const tasks = getData('hw_tasks', []).filter(t => t.empId === currentUser.id);
-      const staffTaskList = document.getElementById('staffTaskList');
-      staffTaskList.innerHTML = tasks.length === 0
-        ? `<p class="text-xs text-slate-500">No duties assigned to you yet.</p>`
-        : tasks.map(t => `
-            <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 flex flex-wrap justify-between items-center gap-3">
-              <div>
-                <div class="flex items-center space-x-2">
-                  <h4 class="text-sm font-black text-white">${t.title}</h4>
-                  <span class="text-[10px] px-2 py-0.5 rounded-full font-black bg-amber-500/20 text-amber-400">+${t.points || 20} Pts</span>
-                  <span class="text-[10px] px-2 py-0.5 rounded-full font-black ${t.priority === 'High' ? 'bg-rose-500/20 text-rose-400' : 'bg-indigo-500/20 text-indigo-400'}">${t.priority}</span>
-                </div>
-                <p class="text-xs text-slate-400 mt-1">Deadline: ${t.deadline} • Date: ${t.date}</p>
-                ${t.transferLog ? `<p class="text-[11px] text-amber-400 mt-1"><i class="fa-solid fa-right-left mr-1"></i>${t.transferLog}</p>` : ''}
-              </div>
-              <div class="flex items-center space-x-2">
-                ${t.status === 'Pending' ? `
-                  <button type="button" onclick="openCompleteProofModal('${t.id}')" class="liquid-btn glow-emerald px-4 py-2 rounded-xl text-xs font-black text-emerald-400">
-                    <i class="fa-solid fa-camera mr-1"></i> Done + Proof
-                  </button>
-                  <button type="button" onclick="openDutyTransferModal('${t.id}')" class="liquid-btn glow-amber px-4 py-2 rounded-xl text-xs font-black text-amber-400">
-                    <i class="fa-solid fa-right-left mr-1"></i> Transfer
-                  </button>
-                ` : `<span class="px-3 py-1 rounded-full text-xs font-black bg-emerald-500/20 text-emerald-400">Completed (${t.completedAt || 'Done'})</span>`}
-              </div>
-            </div>
-          `).join('');
+      closeModal("qrScannerModal");
     }
+
+    // ================= BOOTSTRAP =================
+    window.addEventListener("DOMContentLoaded", () => {
+      initRealtimeListeners();
+      const saved = localStorage.getItem("hw_session_data");
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          setTimeout(() => {
+            if (!currentUser && parsed.empId && portalState.employees[parsed.empId]) {
+              currentSessionId = parsed.sessionId;
+              completeLoginWithId(parsed.empId);
+            }
+          }, 600);
+        } catch (e) {}
+      }
+    });
   </script>
 </body>
 </html>
